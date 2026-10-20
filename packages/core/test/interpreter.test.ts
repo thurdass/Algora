@@ -123,3 +123,77 @@ test("malformed syntax and unsupported commands produce source diagnostics", () 
     /Esperado 'entao'/,
   );
 });
+
+test("BOM, total array allocation budget and multidimensional index checks", async () => {
+  assert.equal(
+    (await execute("\uFEFF" + program("x:inteiro", "x <- 7"))).variables.x,
+    7,
+  );
+  assert.throws(
+    () =>
+      createInterpreter(program("v:vetor[1..10000,1..10000] de inteiro", "")),
+    /limite de memória/,
+  );
+  assert.throws(
+    () =>
+      createInterpreter(program("a,b:vetor[1..60000,1..10] de inteiro", "")),
+    /limite de memória/,
+  );
+  await assert.rejects(
+    execute(program("v:vetor[1..2,1..3] de inteiro", "v[1,4] <- 1")),
+    /Índice fora/,
+  );
+});
+test("breakpoints inspect pre-execution values and continue to completion", async () => {
+  const source = program("x:inteiro", "x <- 1\nx <- 2\nx <- 3");
+  let pauses = 0;
+  const interpreter = createInterpreter(source, {
+    onStep: (s) => {
+      if (s.status === "paused") {
+        pauses++;
+        assert.equal(s.line, 6);
+        assert.equal(s.variables.x, 1);
+        interpreter.continue();
+      }
+    },
+  });
+  interpreter.setBreakpoints([6]);
+  assert.equal((await interpreter.run()).variables.x, 3);
+  assert.equal(pauses, 1);
+});
+test("stop and AbortSignal cancel an unresolved input promise", async () => {
+  for (const abort of [false, true]) {
+    const controller = new AbortController();
+    let started!: () => void;
+    const waiting = new Promise<void>((r) => (started = r));
+    const interpreter = createInterpreter(program("x:inteiro", "leia(x)"), {
+      signal: controller.signal,
+      input: async () => {
+        started();
+        return new Promise<string>(() => {});
+      },
+    });
+    const run = interpreter.run();
+    await waiting;
+    if (abort) controller.abort();
+    else interpreter.stop();
+    await assert.rejects(run, { name: "AbortError" });
+    assert.equal(interpreter.getSnapshot().status, "stopped");
+  }
+});
+test("function arguments run sequentially when functions mutate global state", async () => {
+  const source = `algoritmo "argumentos"
+var
+x:inteiro
+funcao next():inteiro
+inicio
+x <- x + 1
+retorne x
+fimfuncao
+inicio
+escreval(copia("abcd",next(),next()))
+fimalgoritmo`;
+  let output = "";
+  await execute(source, { output: (t) => (output += t) });
+  assert.equal(output, "ab\n");
+});
