@@ -1,8 +1,6 @@
-node_modules/
-dist/
+.gradle/
+**/build/
 release/
-coverage/
 *.log
-
-test-results/
-playwright-report/
+.idea/
+*.iml
