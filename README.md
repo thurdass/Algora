@@ -4,9 +4,11 @@ IDE moderna para aprender e executar Portugol em arquivos `.alg`, com interpreta
 
 O editor Monaco oferece realce de sintaxe, autocompletar, trechos de código e abas. O terminal integrado recebe a entrada de `leia` e mostra a saída do algoritmo. O depurador permite pontos de parada, pausa, execução passo a passo e inspeção de variáveis. O aplicativo desktop usa Electron e React; o interpretador não depende da interface.
 
+![Interface do Algora](docs/assets/algora.png)
+
 ## Executar
 
-Requer Node.js 24 ou superior e npm. No Linux, o aplicativo Electron também requer as bibliotecas gráficas do sistema.
+Requer Node.js 24 ou superior e npm. No Linux, o aplicativo Electron também requer as bibliotecas gráficas e suporte ao sandbox do Chromium. Em ambientes com namespaces restritos, use o `.deb` ou `npm run dev:web`; veja [instalação](docs/instalacao.md).
 
 ```bash
 npm ci
