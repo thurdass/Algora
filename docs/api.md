@@ -9,7 +9,7 @@ O módulo `interpreter` usa Java 21 e não depende da interface. A fachada públ
 | `AlgoraEngine.createSession(String, InputProvider, Consumer<String>, Consumer<Snapshot>)` | Cria uma `DebugSession` controlável |
 | `InputProvider.read()` | Fornece uma entrada textual para `leia`; pode lançar exceção |
 
-`Program` representa a AST do algoritmo. Erros da linguagem são apresentados por `AlgoraException`; os consumidores devem tratar erros de análise e de execução, incluindo os que chegam pela conclusão assíncrona da sessão.
+`Program` representa a AST do algoritmo. Erros da linguagem são apresentados por `AlgoraException`; os consumidores devem tratar erros de análise e de execução, incluindo os que chegam pela conclusão assíncrona da sessão. A execução direta usa `CompletableFuture.join()` internamente: erros de execução podem estar envolvidos em `CompletionException`.
 
 ## Sessões e snapshots
 

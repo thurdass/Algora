@@ -31,6 +31,6 @@ O desktop requer sessão gráfica e as bibliotecas nativas necessárias ao JavaF
 
 O primeiro comando usa o tipo `app-image` do `jpackage`: uma pasta executável com runtime Java incluído. Esse nome não designa o formato de arquivo `.AppImage` do Linux. O segundo gera um instalador nativo para o sistema do build. Não há compilação cruzada de instaladores pelo `jpackage`: gere Linux em Linux e Windows em Windows.
 
-Pacotes Linux podem exigir ferramentas como `dpkg-deb`, `fakeroot` ou `rpmbuild`, conforme o formato escolhido na tarefa. Instaladores Windows exigem as ferramentas nativas de empacotamento compatíveis com o JDK usado. Os pacotes precisam ser testados em cada sistema; a compilação Java por si só não verifica diálogos nativos, fontes, atalhos ou instalação.
+A tarefa Linux gera `.deb` e requer `dpkg-deb` e `fakeroot`. A tarefa Windows gera `.exe` e requer WiX compatível com o JDK 21. Os pacotes precisam ser testados em cada sistema; a compilação Java por si só não verifica diálogos nativos, fontes, atalhos ou instalação.
 
-Consulte as tarefas Gradle do módulo `desktop` para o diretório de saída e o tipo específico de instalador. A distribuição inclui runtime; o usuário final não precisa instalar um JDK separadamente.
+A aplicação fica em `desktop/build/jpackage/image/Algora/`; no Linux, o executável é `desktop/build/jpackage/image/Algora/bin/Algora`. Instaladores ficam em `desktop/build/jpackage/installer/`. A distribuição inclui runtime; o usuário final não precisa instalar um JDK separadamente.
