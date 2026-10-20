@@ -322,3 +322,67 @@ test("unconditional repita ends with interrompa and ate_que accepts until condit
   );
   assert.equal(result.variables.n, 5);
 });
+
+test("documented math signatures implement powers, inverse trig and angle conversions", async () => {
+  const result = await execute(
+    program(
+      "power,angle,sine,cosine,cotangent,degrees:real",
+      "power <- exp(2,9)\nangle <- grauprad(90)\nsine <- arcsen(1)\ncosine <- arccos(0)\ncotangent <- cotan(pi/4)\ndegrees <- radpgrau(pi)",
+    ),
+  );
+  assert.equal(result.variables.power, 512);
+  for (const name of ["angle", "sine", "cosine"])
+    assert.ok(Math.abs(Number(result.variables[name]) - Math.PI / 2) < 1e-12);
+  assert.ok(Math.abs(Number(result.variables.cotangent) - 1) < 1e-12);
+  assert.equal(result.variables.degrees, 180);
+  await assert.rejects(
+    execute(program("x:real", "x <- exp(2)")),
+    /Quantidade de argumentos inválida: exp/,
+  );
+  await assert.rejects(
+    execute(program("x:real", "x <- arccos(2)")),
+    /Resultado inválido: arccos/,
+  );
+});
+test("zero argument Pi and Rand work bare or called, bound identifiers retain scope", async () => {
+  const result = await execute(
+    program("a,b,c,d:real", "a <- pi\nb <- pi()\nc <- rand\nd <- rand()"),
+    { random: () => 0.25 },
+  );
+  assert.equal(result.variables.a, Math.PI);
+  assert.equal(result.variables.b, Math.PI);
+  assert.equal(result.variables.c, 0.25);
+  assert.equal(result.variables.d, 0.25);
+  assert.equal(
+    (await execute(program("pi:real\nrand:real", "pi <- 7\nrand <- pi")))
+      .variables.rand,
+    7,
+  );
+  await assert.rejects(
+    execute(program("x:real", "x <- pi(1)")),
+    /Quantidade de argumentos inválida: pi/,
+  );
+  await assert.rejects(
+    execute(program("x:inteiro", "x <- randi(0)")),
+    /limite inteiro positivo/,
+  );
+  await assert.rejects(
+    execute(program("x:real", "x <- rand"), { random: () => 1 }),
+    /Gerador aleatório/,
+  );
+});
+test("documented text helpers use substring first, one-based positions and ASCII conversion", async () => {
+  let output = "";
+  await execute(
+    program(
+      "",
+      'escreval(pos("Brasil","O melhor do Brasil")," ",pos("z","abc")," ",copia("abcdef",2,3)," ",asc("Brasil")," ",carac(65)," ",caracpnum("9")+2," ",numpcarac(6)+"2")',
+    ),
+    { output: (t) => (output += t) },
+  );
+  assert.equal(output, "13 0 bcd 66 A 11 62\n");
+  await assert.rejects(
+    execute(program("", 'escreval(pos("x"))')),
+    /Quantidade de argumentos inválida: pos/,
+  );
+});

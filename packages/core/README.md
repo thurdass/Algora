@@ -30,9 +30,9 @@ O depurador pausa **antes** de executar a instrução indicada. `getSnapshot()` 
 - `escreva`, `escreval` (inclusive sem parênteses para linha vazia), formatação por largura/casas decimais e `leia` assíncrono com conversão de tipos.
 - `se/senao`, `para/passo`, `enquanto`, `repita/ate`, `escolha/caso/outrocaso` (incluindo intervalos `caso 5 ate 7`) e `interrompa`; `repita` também admite `fimrepita` e `ate_que`.
 - Funções com `retorne`, procedimentos, recursão, parâmetros escalares e parâmetros escalares por referência.
-- Funções matemáticas e de texto comuns: `abs`, `raizq`, `quad`, `int`, `sen`, `cos`, `tan`, `arctan`, `exp`, `log`, `logn`, `pi()`, `compr`, `maiusc`, `minusc`, `copia`, `pos`, `asc`, `carac`, `numpcarac`, `caracpnum`, `rand` e `randi`.
+- Funções matemáticas e de texto comuns: `abs`, `raizq`, `quad`, `int`, `sen`, `cos`, `tan`, `arctan`, `arccos`, `arcsen`, `cotan`, `exp(base,expoente)`, `grauprad`, `radpgrau`, `log`, `logn`, `pi`/`pi()`, `compr`, `maiusc`, `minusc`, `copia`, `pos`, `asc`, `carac`, `numpcarac`, `caracpnum`, `rand`/`rand()` e `randi`.
 
-A compatibilidade é parcial e explicitamente testada, não uma reprodução integral do VisualG. Registros, arquivos, parâmetros vetoriais, comandos gráficos e opções específicas da aplicação original ainda não são suportados. `limpatela` emite sequência ANSI; `pausa` é aceita sem bloquear. A função `pi` exige `pi()`. Os argumentos são separados por vírgulas; grupos de parâmetros por ponto e vírgula. Texto deve permanecer em uma linha. Conteúdo depois de `fimalgoritmo` é rejeitado.
+A compatibilidade é parcial e explicitamente testada, não uma reprodução integral do VisualG. Registros, arquivos, parâmetros vetoriais, comandos gráficos e opções específicas da aplicação original ainda não são suportados. `limpatela` emite sequência ANSI; `pausa` é aceita sem bloquear. Os argumentos são separados por vírgulas; grupos de parâmetros por ponto e vírgula. Texto deve permanecer em uma linha. Conteúdo depois de `fimalgoritmo` é rejeitado.
 
 As sintaxes das declarações e dos comandos foram conferidas nos exemplos distribuídos na pasta `Exemplos` da instalação fornecida, sem incorporar esses arquivos ao projeto. Os testes usam algoritmos novos.
 

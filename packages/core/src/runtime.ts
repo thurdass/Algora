@@ -220,7 +220,14 @@ export class Interpreter {
   }
   private async eval(expr: Expr): Promise<Value> {
     if (expr.kind === "literal") return expr.value;
-    if (expr.kind === "ref") return this.get(expr);
+    if (expr.kind === "ref") {
+      const bound =
+        this.scopes[this.scopes.length - 1].has(expr.name) ||
+        this.scopes[0].has(expr.name);
+      if (!bound && !expr.indices.length && ["pi", "rand"].includes(expr.name))
+        return this.call(expr.name, []);
+      return this.get(expr);
+    }
     if (expr.kind === "call") return this.call(expr.name, expr.args);
     if (expr.kind === "unary") {
       const v = await this.eval(expr.right);
@@ -306,7 +313,12 @@ export class Interpreter {
       cos: Math.cos,
       tan: Math.tan,
       arctan: Math.atan,
-      exp: Math.exp,
+      arccos: Math.acos,
+      arcsen: Math.asin,
+      cotan: (n: number) => 1 / Math.tan(n),
+      exp: (base: number, exponent: number) => base ** exponent,
+      grauprad: (n: number) => (n * Math.PI) / 180,
+      radpgrau: (n: number) => (n * 180) / Math.PI,
       log: Math.log10,
       logn: Math.log,
       pi: () => Math.PI,
@@ -320,12 +332,25 @@ export class Interpreter {
       carac: (n: number) => String.fromCharCode(n),
       numpcarac: (n: Value) => String(n),
       caracpnum: (s: Value) => Number(s),
-      randi: (n: number) => Math.floor(Math.random() * n),
-      rand: () => Math.random(),
+      randi: (n: number) => Math.floor(this.random() * n),
+      rand: () => this.random(),
     };
     if (builtins[name]) {
+      if (args.length !== builtins[name].length)
+        throw new AlgoraError(
+          `Quantidade de argumentos inválida: ${name}`,
+          this.line,
+        );
       const values: Value[] = [];
       for (const arg of args) values.push(await this.eval(arg));
+      if (
+        name === "randi" &&
+        (!Number.isSafeInteger(values[0]) || Number(values[0]) <= 0)
+      )
+        throw new AlgoraError(
+          "randi requer limite inteiro positivo",
+          this.line,
+        );
       const result = builtins[name](...values);
       if (typeof result === "number" && !Number.isFinite(result))
         throw new AlgoraError(`Resultado inválido: ${name}`, this.line);
@@ -374,6 +399,15 @@ export class Interpreter {
       this.scopes.pop();
       this.depth--;
     }
+  }
+  private random(): number {
+    const sample = (this.options.random ?? Math.random)();
+    if (!Number.isFinite(sample) || sample < 0 || sample >= 1)
+      throw new AlgoraError(
+        "Gerador aleatório deve retornar valor em [0,1)",
+        this.line,
+      );
+    return sample;
   }
   private async readInput(): Promise<string> {
     this.check();
@@ -471,12 +505,7 @@ export class Interpreter {
                 "Intervalo aleatório sem valores representáveis",
                 s.line,
               );
-            const sample = (this.options.random ?? Math.random)();
-            if (!Number.isFinite(sample) || sample < 0 || sample >= 1)
-              throw new AlgoraError(
-                "Gerador aleatório deve retornar valor em [0,1)",
-                s.line,
-              );
+            const sample = this.random();
             response = String(
               (min + Math.floor(sample * (max - min + 1))) / scale,
             );
