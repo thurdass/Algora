@@ -1,3 +1,7 @@
+# Histórico: levantamento do protótipo TypeScript
+
+Este documento registra exclusivamente o protótipo TypeScript anterior à implementação Java. Seus resultados, APIs e comandos não medem nem descrevem a versão Java atual. O código histórico pode ser consultado nos commits citados.
+
 # Levantamento de compatibilidade dos exemplos fornecidos
 
 Data: 20/10/2026. Ambiente: Linux, Node.js 24.19.0, TypeScript via tsx. O conjunto analisado contém todos os arquivos com extensão `.alg` (sem distinção de caixa) encontrados recursivamente em `Exemplos`, mais o `TESTE.alg` da raiz da instalação fornecida. Arquivos com nomes como `.alg.ALG` contam como arquivos separados; não houve deduplicação. Nenhum exemplo original foi redistribuído.

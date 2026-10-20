@@ -1,32 +1,36 @@
 # Instalação e desenvolvimento
 
-Use Node.js 24 e `npm ci`. O script de instalação baixa explicitamente o runtime do Electron 44. A interface inclui Monaco e seu worker no build; não precisa de CDN para carregar o editor.
+O Algora usa Java 21, JavaFX 21, ANTLR4 e RichTextFX. O build utiliza Gradle Wrapper com Kotlin DSL; não é necessário instalar Gradle globalmente. A primeira execução precisa de rede para baixar a distribuição e as dependências. Um JDK completo, com `jpackage`, é necessário para gerar pacotes.
 
-## Linux
+## Desenvolvimento
 
-Os pacotes ficam em `release/`. Em sistemas Debian/Ubuntu, instale o `.deb` com o gerenciador do sistema, por exemplo:
-
-```sh
-sudo apt install ./release/Algora-0.1.0-amd64.deb
-algora
-```
-
-O instalador registra o menu, o executável e a configuração de sandbox apropriada ao sistema. O AppImage é outra distribuição disponível, sujeita ao suporte de FUSE e namespaces do ambiente.
-
-No host Linux usado no desenvolvimento, a execução direta do Electron extraído de `node_modules` foi recusada pelo sandbox do Chromium: namespaces de usuário estão restritos e o helper local não tem proprietário/permissões SUID de instalação. Esse é um limite observado do ambiente. O projeto não desativa o sandbox automaticamente nem altera a política do sistema. Nesse cenário, use o pacote `.deb` ou a interface no navegador:
+No Linux:
 
 ```sh
-npm run dev:web
+./gradlew test
+./gradlew :desktop:run
+./gradlew :cli:run --args='examples/ola.alg'
 ```
 
-A interface abre em `http://127.0.0.1:5187`. O interpretador, terminal e depurador são os mesmos. A abertura e o salvamento usam os diálogos do navegador.
+No Windows, use os mesmos argumentos com `gradlew.bat`, por exemplo:
 
-## Windows
+```powershell
+.\gradlew.bat test
+.\gradlew.bat :desktop:run
+.\gradlew.bat :cli:run --args="examples/ola.alg"
+```
 
-Execute `Algora Setup 0.1.0.exe`, gerado com NSIS. O instalador permite escolher o diretório. Os pacotes locais não possuem certificado de assinatura. Para desenvolver em Windows, use `npm ci` e `npm run dev`.
+O desktop requer sessão gráfica e as bibliotecas nativas necessárias ao JavaFX. Em um servidor Linux sem tela, um display virtual pode ser necessário para testes de interface. O núcleo e a CLI não dependem de uma sessão gráfica.
 
-## Desenvolvimento desktop e testes
+## Pacotes nativos
 
-`npm run dev` inicia Vite e Electron, requerendo suporte ao sandbox no Linux. `npm run check` verifica tipos, testes do núcleo/CLI e build da interface. `npm run test:e2e` instala Chromium e verifica a interface no navegador. `npm run test:desktop` verifica a ponte Electron, importação Windows-1252, execução e salvamento. Em Linux sem sessão gráfica, rode esse último com `xvfb-run -a`.
+```sh
+./gradlew :desktop:jpackageAppImage
+./gradlew :desktop:jpackageInstaller
+```
 
-O Playwright controla uma instância Electron de teste com perfil temporário próprio. Seus argumentos de automação são gerenciados pelo Playwright; o aplicativo distribuído mantém a configuração de sandbox padrão e `contextIsolation`, sem integração Node no renderer.
+O primeiro comando usa o tipo `app-image` do `jpackage`: uma pasta executável com runtime Java incluído. Esse nome não designa o formato de arquivo `.AppImage` do Linux. O segundo gera um instalador nativo para o sistema do build. Não há compilação cruzada de instaladores pelo `jpackage`: gere Linux em Linux e Windows em Windows.
+
+Pacotes Linux podem exigir ferramentas como `dpkg-deb`, `fakeroot` ou `rpmbuild`, conforme o formato escolhido na tarefa. Instaladores Windows exigem as ferramentas nativas de empacotamento compatíveis com o JDK usado. Os pacotes precisam ser testados em cada sistema; a compilação Java por si só não verifica diálogos nativos, fontes, atalhos ou instalação.
+
+Consulte as tarefas Gradle do módulo `desktop` para o diretório de saída e o tipo específico de instalador. A distribuição inclui runtime; o usuário final não precisa instalar um JDK separadamente.

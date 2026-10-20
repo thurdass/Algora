@@ -1,59 +1,38 @@
 # Algora
 
-IDE moderna para aprender e executar Portugol em arquivos `.alg`, com interpretador próprio e independente do VisualG. Projeto em desenvolvimento: a compatibilidade é parcial e está documentada em [compatibilidade](docs/compatibilidade.md).
+IDE para escrever, executar e depurar algoritmos em Portugol, com interpretador próprio para arquivos `.alg` do dialeto VisualG. O projeto usa **Java 21, JavaFX 21, ANTLR4 e RichTextFX**, com **Gradle Kotlin DSL**, testes **JUnit 5** e distribuição nativa via **jpackage**.
 
-O editor Monaco oferece realce de sintaxe, autocompletar, trechos de código e abas. O terminal integrado recebe a entrada de `leia` e mostra a saída do algoritmo. O depurador permite pontos de parada, pausa, execução passo a passo e inspeção de variáveis. O aplicativo desktop usa Electron e React; o interpretador não depende da interface.
-
-![Interface do Algora](docs/assets/algora.png)
+A interface reúne editor, entrada e saída do algoritmo, autocompletar e depurador. O núcleo da linguagem permanece independente da interface gráfica. A compatibilidade é parcial; consulte a [matriz de compatibilidade](docs/compatibilidade.md) antes de importar programas existentes.
 
 ## Executar
 
-Requer Node.js 24 ou superior e npm. No Linux, o aplicativo Electron também requer as bibliotecas gráficas e suporte ao sandbox do Chromium. Em ambientes com namespaces restritos, use o `.deb` ou `npm run dev:web`; veja [instalação](docs/instalacao.md).
+Instale um JDK 21 completo. O Gradle Wrapper baixa as dependências na primeira execução.
 
-```bash
-npm ci
-npm run dev
+```sh
+./gradlew test
+./gradlew :desktop:run
+./gradlew :cli:run --args='examples/ola.alg'
 ```
 
-Para usar a interface no navegador:
+No Windows, substitua `./gradlew` por `.\gradlew.bat`. Os exemplos originais em `examples/` incluem entrada de dados, fatorial e vetores. O terminal integrado recebe valores de `leia` e apresenta a saída; não é um shell do sistema operacional.
 
-```bash
-npm run dev:web
+## Gerar distribuição
+
+```sh
+./gradlew :desktop:jpackageAppImage
+./gradlew :desktop:jpackageInstaller
 ```
 
-No desktop, abra e salve arquivos com `Ctrl+O` e `Ctrl+S`. Execute com `F5`, alterne pontos de parada com `F9` ou clicando na margem do editor e avance com `F10`. A versão web usa os recursos de arquivos do navegador; não recebe acesso irrestrito ao disco. O terminal é a entrada e saída do algoritmo, sem executar comandos do sistema.
+`jpackageAppImage` gera uma pasta de aplicação com runtime Java incluído, correspondente ao tipo `app-image` do JDK. Não gera um arquivo Linux `.AppImage`. `jpackageInstaller` gera o instalador nativo do sistema onde o build é executado. Linux e Windows exigem builds e validação próprios. Veja [instalação](docs/instalacao.md) para requisitos e limitações.
 
-Também é possível executar sem interface:
+## Organização
 
-```bash
-npm run cli -- examples/ola.alg
-npm run cli -- examples/entrada.alg
-npm run cli -- examples/fatorial.alg
-npm run cli -- examples/vetores.alg
-```
+- `interpreter`: gramática ANTLR4, AST, execução e API de depuração, sem dependência gráfica.
+- `desktop`: aplicação JavaFX 21 e editor RichTextFX.
+- `cli`: execução de algoritmos no terminal usando o mesmo interpretador.
+- `examples`: programas originais para experimentar.
+- `docs`: arquitetura, API, compatibilidade e evidências da investigação.
 
-## Verificação e distribuição
+Consulte a [arquitetura](docs/arquitetura.md), a [API Java](docs/api.md) e o [relatório REA](docs/engenharia-reversa.md). O Algora foi implementado de forma independente. O executável, recursos e código proprietário do VisualG não são distribuídos. A análise estática do original não comprova equivalência integral de comportamento.
 
-```bash
-npm run check
-npm run test:e2e
-npm run test:desktop
-npm run dist:linux
-npm run dist:win
-```
-
-`check` verifica tipos, executa os testes do interpretador e gera a interface. Os comandos de distribuição geram AppImage/deb para Linux e instalador NSIS para Windows em `release/`. A compilação do instalador Windows a partir de Linux pode exigir Wine; prefira o runner Windows da integração contínua. A execução real em Windows ainda depende de validação nesse sistema; gerar um instalador não demonstra equivalência de comportamento entre plataformas.
-
-## Estrutura
-
-- `packages/core`: analisador léxico, parser, interpretador e API do depurador em TypeScript.
-- `packages/cli`: execução de arquivos pelo terminal.
-- `apps/desktop`: editor React/Monaco e integração Electron com arquivos locais.
-- `examples`: algoritmos originais para experimentar.
-- `docs`: arquitetura, compatibilidade, API e investigação do executável fornecido.
-
-O levantamento local aceita sintaticamente **59 de 73** arquivos distribuídos com o VisualG (80,8%). Isso não garante execução equivalente; veja o [levantamento reproduzível](docs/compatibility-survey.md) e os recursos ainda ausentes.
-
-Consulte [arquitetura](docs/arquitetura.md), [API](docs/api.md) e [relatório REA](docs/engenharia-reversa.md). O código foi implementado de forma independente; o executável e os recursos proprietários do VisualG não são distribuídos. A investigação estática orienta requisitos e não comprova compatibilidade integral.
-
-Repositório: [thurdass/Algora](https://github.com/thurdass/Algora) (privado; exige acesso autorizado). Use mensagens [Conventional Commits](https://www.conventionalcommits.org/) nas contribuições.
+Repositório: [thurdass/Algora](https://github.com/thurdass/Algora), privado. Os commits seguem Conventional Commits.

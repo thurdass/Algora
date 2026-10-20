@@ -22,9 +22,9 @@ A investigação respondeu à identidade do artefato e encontrou evidência de v
 
 ## Aplicação no Algora
 
-O interpretador é implementação original em TypeScript: tokenização, análise sintática, avaliação de AST, escopos e checkpoints do depurador. A arquitetura Electron/React/Monaco é uma escolha de projeto para fornecer uma IDE atual em Linux e Windows; não é uma característica inferida do VisualG.
+O interpretador é implementação original em Java 21, com gramática ANTLR4 e runtime separado da interface JavaFX 21/RichTextFX. Essa arquitetura é uma escolha de projeto para fornecer uma IDE atual em Linux e Windows; não é uma característica inferida do VisualG.
 
-A sintaxe também foi conferida nos exemplos distribuídos na instalação local, sem incorporá-los ao repositório. Os exemplos e testes do Algora são novos. A [matriz de compatibilidade](compatibilidade.md) descreve o que o código atual implementa e o que está ausente.
+A sintaxe também foi conferida nos exemplos distribuídos na instalação local, sem incorporá-los ao repositório. Os exemplos e testes do Algora são novos. A [matriz de compatibilidade](compatibilidade.md) descreve o que o código atual implementa e o que está ausente. O [levantamento do protótipo TypeScript](historico/levantamento-typescript.md) é histórico: seus números não são resultados da implementação Java.
 
 ## Limites e questões abertas
 
