@@ -66,3 +66,19 @@ test("reports syntax errors and recovers for another run", async ({ page }) => {
   await expect(page.locator(".terminal-content")).toContainText("recuperado");
   await expect(page.locator(".terminal-error")).toHaveCount(0);
 });
+
+test("offers Portugol completion and records a line breakpoint", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator(".view-lines")).toContainText("fimalgoritmo");
+  await page.getByTitle("Novo arquivo").click();
+  await page.locator(".view-lines .view-line").nth(3).click();
+  await page.keyboard.press("End");
+  await page.keyboard.press("Control+Space");
+  await expect(page.locator(".suggest-widget")).toBeVisible();
+  await expect(page.locator(".suggest-widget")).toContainText("algoritmo");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("F9");
+  await expect(page.locator(".breakpoint-row")).toContainText(":4");
+});

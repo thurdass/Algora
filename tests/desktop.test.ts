@@ -18,9 +18,11 @@ test(
         "latin1",
       ),
     );
+    const packaged = process.env.ALGORA_EXECUTABLE;
     const app = await _electron.launch({
+      ...(packaged ? { executablePath: resolve(packaged) } : {}),
       args: [
-        resolve("apps/desktop/electron/main.cjs"),
+        ...(!packaged ? [resolve("apps/desktop/electron/main.cjs")] : []),
         "--user-data-dir=" + join(directory, "profile"),
       ],
     });
