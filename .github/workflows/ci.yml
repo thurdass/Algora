@@ -39,6 +39,10 @@ jobs:
         if: runner.os == 'Linux'
       - run: .\gradlew.bat :desktop:jpackageInstaller --no-daemon
         if: runner.os == 'Windows'
+      - run: xvfb-run -a ./gradlew :desktop:jpackageSmokeTest --no-daemon
+        if: runner.os == 'Linux'
+      - run: .\gradlew.bat :desktop:jpackageSmokeTest --no-daemon
+        if: runner.os == 'Windows'
       - uses: actions/upload-artifact@v4
         with:
           name: Algora-Java21-${{ runner.os }}

@@ -11,7 +11,7 @@ dependencies {
     }
 }
 application { mainClass.set("io.algora.desktop.AlgoraLauncher") }
-tasks.named<JavaExec>("run") { jvmArgs("-Dfile.encoding=UTF-8") }
+tasks.named<JavaExec>("run") { jvmArgs("-Dfile.encoding=UTF-8"); workingDir(rootProject.projectDir) }
 val packageInput = tasks.register<Sync>("preparePackageInput") {
     dependsOn(tasks.jar)
     into(layout.buildDirectory.dir("jpackage/input"))
@@ -50,5 +50,16 @@ tasks.register<Exec>("jpackageInstaller") {
         if(hostOs.isWindows) args += listOf("--win-menu", "--win-shortcut", "--win-dir-chooser", "--win-per-user-install")
         if(hostOs.isLinux) args += listOf("--linux-menu-group", "Development", "--linux-shortcut", "--linux-package-name", "algora", "--linux-deb-maintainer", "thurdass@users.noreply.github.com")
         commandLine(args)
+    }
+}
+
+tasks.register<Exec>("jpackageSmokeTest") {
+    group = "verification"
+    description = "Launch and exercise the self-contained native application image"
+    dependsOn(appImage)
+    doFirst {
+        val image = appImageDirectory.get().dir("Algora").asFile
+        val executable = if(hostOs.isWindows) image.resolve("Algora.exe") else if(hostOs.isMacOsX) image.resolve("Contents/MacOS/Algora") else image.resolve("bin/Algora")
+        commandLine(executable.absolutePath, "--smoke-test")
     }
 }

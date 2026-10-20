@@ -129,7 +129,8 @@ public final class AlgoraApplication extends Application {
             refreshBreakpoints(); if(value!=null) explorer.getSelectionModel().select(documents.get(value));
         });
         addDocument("boas-vindas.alg",null,SAMPLE); stage.show();
-        List<String> args=getParameters().getRaw(); for(String arg:args)if(arg.endsWith(".alg"))load(Path.of(arg));
+        List<String> args=getParameters()==null?List.of():getParameters().getRaw(); for(String arg:args)if(arg.endsWith(".alg"))load(Path.of(arg));
+        if(args.contains("--smoke-test")) smokeTest();
     }
     private HBox header(){
         Label logo=new Label("{ }" );logo.getStyleClass().add("brand-icon"); Label brand=new Label("algora");brand.getStyleClass().add("brand");Label tag=new Label("IDE");tag.getStyleClass().add("brand-tag");
@@ -159,7 +160,7 @@ public final class AlgoraApplication extends Application {
     private VBox inspector(){
         VBox box=new VBox();box.getStyleClass().add("inspector");box.setPrefWidth(225);box.setMinWidth(185);Label title=heading("INSPEÇÃO");title.getStyleClass().add("panel-heading");Label vars=heading("⌄  VARIÁVEIS");vars.getStyleClass().add("section-heading");variables.setId("variablesTable");variables.getStyleClass().add("variables");emptyVariables();Label points=heading("⌄  PONTOS DE PARADA");points.getStyleClass().add("section-heading");breakpointList.getStyleClass().add("breakpoints");Region space=new Region();VBox.setVgrow(space,Priority.ALWAYS);Label tip=new Label("◈   Entenda cada passo\n     Depure no seu ritmo.");tip.getStyleClass().add("debug-tip");box.getChildren().addAll(title,vars,variables,points,breakpointList,space,tip);return box;
     }
-    private HBox statusbar(){Region space=new Region();HBox.setHgrow(space,Priority.ALWAYS);HBox box=new HBox(24,status,new Label("Algora 0.1"),space,position,new Label("UTF-8"),new Label("Portugol · VisualG"));box.getStyleClass().add("statusbar");return box;}
+    private HBox statusbar(){Region space=new Region();HBox.setHgrow(space,Priority.ALWAYS);HBox box=new HBox(24,status,new Label("Algora 0.2"),space,position,new Label("UTF-8"),new Label("Portugol · VisualG"));box.getStyleClass().add("statusbar");return box;}
     private Label heading(String text){Label l=new Label(text);l.getStyleClass().add("heading");return l;}
     private Button button(String text,String tooltip,Runnable action){Button b=new Button(text);b.setTooltip(new Tooltip(tooltip));b.setOnAction(e->action.run());b.setFocusTraversable(false);return b;}
     private Document active(){return documents.get(tabs.getSelectionModel().getSelectedItem());}
@@ -198,6 +199,24 @@ public final class AlgoraApplication extends Application {
     private String format(Object value){if(value instanceof String s)return '"'+s+'"';if(value instanceof Map<?,?> map)return map.toString();if(value instanceof Object[] array)return Arrays.deepToString(array);return String.valueOf(value);}
     private void setRunning(boolean value){running=value;for(Document d:documents.values())d.editor.setEditable(!value);debug.setDisable(value);pause.setDisable(!value);step.setDisable(!value);stop.setDisable(!value);if(!value){input.setDisable(true);runStatus.setText("● Pronto");if(executionDocument!=null){executionDocument.executionLine=0;refreshGutter(executionDocument);}}}
     private void stopExecution(){if(session!=null)session.stop();input.setDisable(true);}
+    /** Exercise the installed runtime without requiring an external JDK or test framework. */
+    private void smokeTest() {
+        javafx.animation.Timeline pulse = new javafx.animation.Timeline();
+        javafx.animation.PauseTransition deadline = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(15));
+        deadline.setOnFinished(event -> { System.err.println("ALGORA_SMOKE_FAILED: timeout"); stop(); Platform.exit(); System.exit(1); });
+        pulse.getKeyFrames().add(new javafx.animation.KeyFrame(javafx.util.Duration.millis(80), event -> {
+            if (!input.isDisabled()) { input.setText("Java 21"); input.fireEvent(new javafx.event.ActionEvent()); }
+            if (terminal.getText().contains("Erro:")) { System.err.println("ALGORA_SMOKE_FAILED: " + terminal.getText()); stop(); Platform.exit(); System.exit(1); }
+            if (terminal.getText().contains("Execução finalizada")) {
+                if (!terminal.getText().contains("Bem-vindo ao Algora, Java 21!") || !terminal.getText().contains("Passo 3")) {
+                    System.err.println("ALGORA_SMOKE_FAILED: unexpected output"); System.exit(1);
+                }
+                pulse.stop(); deadline.stop(); System.out.println("ALGORA_SMOKE_OK"); stop(); Platform.exit();
+            }
+        }));
+        pulse.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        deadline.play(); pulse.play(); run(false);
+    }
     private void showGuide(){Alert alert=new Alert(Alert.AlertType.INFORMATION,"F5  Executar / continuar\nF9  Alternar ponto de parada\nF10  Próximo passo\nCtrl+Espaço  Autocompletar e modelos\nCtrl+O  Abrir arquivo .alg\nCtrl+S  Salvar em UTF-8\nCtrl+N  Novo algoritmo\n\nClique na margem esquerda para adicionar pontos de parada.\nO terminal aceita os valores solicitados por leia().\nArquivos legados Windows-1252 são reconhecidos na abertura.",ButtonType.OK);alert.setHeaderText("Do primeiro passo à próxima ideia.");alert.initOwner(stage);alert.show();}
     @Override public void stop(){if(session!=null)session.stop();executor.shutdownNow();}
 }
