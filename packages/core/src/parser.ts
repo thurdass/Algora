@@ -216,6 +216,11 @@ class Parser {
       return { kind: k, line, value, cases, otherwise };
     }
     if (["escreva", "escreval", "leia"].includes(k)) {
+      if (
+        k !== "leia" &&
+        (this.t.kind === "newline" || this.t.kind === "eof" || this.is(";"))
+      )
+        return { kind: k, line, args: [] };
       this.expect("(");
       const args: { expr: Expr; width?: Expr; precision?: Expr }[] = [];
       if (!this.is(")"))

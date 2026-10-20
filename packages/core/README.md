@@ -26,7 +26,7 @@ O depurador pausa **antes** de executar a instrução indicada. `getSnapshot()` 
 - Palavras chave sem distinção entre maiúsculas, minúsculas e acentos; comentários `//`.
 - Tipos inteiro, real, lógico e caractere; vetores multidimensionais com limites declarados e checagem de índices.
 - Atribuição `<-` e `:=`; aritmética, comparações, operadores lógicos com curto circuito, potência, divisão inteira e módulo.
-- `escreva`, `escreval`, formatação por largura/casas decimais e `leia` assíncrono com conversão de tipos.
+- `escreva`, `escreval` (inclusive sem parênteses para linha vazia), formatação por largura/casas decimais e `leia` assíncrono com conversão de tipos.
 - `se/senao`, `para/passo`, `enquanto`, `repita/ate`, `escolha/caso/outrocaso` e `interrompa`.
 - Funções com `retorne`, procedimentos, recursão, parâmetros escalares e parâmetros escalares por referência.
 - Funções matemáticas e de texto comuns: `abs`, `raizq`, `quad`, `int`, `sen`, `cos`, `tan`, `arctan`, `exp`, `log`, `logn`, `pi()`, `compr`, `maiusc`, `minusc`, `copia`, `pos`, `asc`, `carac`, `numpcarac`, `caracpnum`, `rand` e `randi`.

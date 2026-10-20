@@ -221,3 +221,11 @@ fimalgoritmo`;
   await execute(source, { output: (t) => (output += t) });
   assert.equal(output, "7\n");
 });
+
+test("bare escreval produces a blank line", async () => {
+  let output = "";
+  await execute(program("", 'escreval\nescreval("ok")\nescreval'), {
+    output: (t) => (output += t),
+  });
+  assert.equal(output, "\nok\n\n");
+});
