@@ -34,3 +34,7 @@ O primeiro comando usa o tipo `app-image` do `jpackage`: uma pasta executável c
 A tarefa Linux gera `.deb` e requer `dpkg-deb` e `fakeroot`. A tarefa Windows gera `.exe` e requer WiX compatível com o JDK 21. Os pacotes precisam ser testados em cada sistema; a compilação Java por si só não verifica diálogos nativos, fontes, atalhos ou instalação.
 
 A aplicação fica em `desktop/build/jpackage/image/Algora/`; no Linux, o executável é `desktop/build/jpackage/image/Algora/bin/Algora`. Instaladores ficam em `desktop/build/jpackage/installer/`. A distribuição inclui runtime; o usuário final não precisa instalar um JDK separadamente.
+
+## Verificação dos pacotes
+
+O build, os testes JavaFX e a execução da aplicação nativa com runtime incluído passaram em Linux e Windows. Consulte o [registro de verificação](verificacao.md) para o commit validado, resultados e limites desses testes.

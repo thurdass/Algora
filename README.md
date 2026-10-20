@@ -4,6 +4,10 @@ IDE para escrever, executar e depurar algoritmos em Portugol, com interpretador 
 
 A interface reúne editor com abas e realce de sintaxe, entrada e saída do algoritmo, autocompletar e depurador com pontos de parada e inspeção de variáveis. O núcleo da linguagem permanece independente da interface gráfica. A compatibilidade é parcial: o [levantamento Java](interpreter/compatibility-survey.md) aceitou 58 de 73 arquivos do conjunto local pelo parser, sem afirmar equivalência integral de execução. Consulte a [matriz de compatibilidade](docs/compatibilidade.md) antes de importar programas existentes.
 
+![IDE JavaFX do Algora](docs/assets/algora.png)
+
+Build, 21 testes JUnit 5 e execução do aplicativo empacotado foram aprovados em Linux e Windows. Veja o [registro de verificação](docs/verificacao.md) e os artefatos da CI.
+
 ## Executar
 
 Instale um JDK 21 completo. O Gradle Wrapper baixa as dependências na primeira execução.
