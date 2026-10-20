@@ -1,0 +1,24 @@
+# Compatibilidade com arquivos .alg
+
+O formato aceito é o dialeto Portugol do VisualG, com cobertura parcial. A extensão `.alg` por si só não garante execução: outros ambientes Portugol usam sintaxes diferentes. Os testes automatizados usam algoritmos originais e não substituem uma comparação de execução com o VisualG.
+
+| Recurso | Implementação |
+| --- | --- |
+| Estrutura | `algoritmo`, declarações opcionais com `var`, `inicio`, `fimalgoritmo` |
+| Tipos | `inteiro`, `real`, `logico`, `caractere` e aliases `caracter`/`literal` |
+| Vetores | Uma ou mais dimensões, limites declarados e validação de índices |
+| Atribuição | `<-` e `:=`; conversão para o tipo declarado |
+| Expressões | Aritmética, potência, comparações, divisão inteira, módulo, `e`, `ou`, `xou`, `nao` |
+| Entrada e saída | `leia`, `escreva`, `escreval`, largura e casas decimais |
+| Controle | `se/senao`, `para/passo`, `enquanto`, `repita/ate`, `escolha`, `interrompa` em laços |
+| Rotinas | Funções, procedimentos, recursão e parâmetros escalares por valor ou referência |
+| Texto | `compr`, `maiusc`, `minusc`, `copia`, `pos`, `asc`, `carac`, `numpcarac`, `caracpnum` |
+| Matemática | `abs`, `raizq`, `quad`, `int`, `sen`, `cos`, `tan`, `arctan`, `exp`, `log`, `logn`, `pi()` |
+| Aleatoriedade | `rand()` e `randi(n)`; resultados não determinísticos |
+| Depuração | Breakpoints por linha, pausa, passo e snapshots de variáveis |
+
+Palavras e identificadores são normalizados sem distinguir caixa ou acentos. Comentários começam com `//`. Argumentos são separados por vírgulas e grupos de parâmetros por ponto e vírgula. Textos entre aspas devem estar em uma única linha. Conteúdo depois de `fimalgoritmo` é rejeitado.
+
+Não há suporte a registros, arquivos, parâmetros vetoriais, comandos gráficos ou às opções particulares do aplicativo original. `limpatela` emite uma sequência ANSI; sua apresentação depende do consumidor da saída. `pausa` é aceita sem bloquear. `pi` exige parênteses. As funções numéricas usam números JavaScript; limites, arredondamento e resultados em casos extremos podem diferir do VisualG. Não há promessa de equivalência de mensagens de erro, formatação completa ou semântica em todos os programas existentes.
+
+Arquivos novos são UTF-8. Consulte a implementação dos adaptadores de arquivos para os encodings legados aceitos ao importar; não se deve presumir detecção universal de codificação. A validação funcional real em Windows permanece pendente de execução dos testes e do aplicativo nesse sistema.
