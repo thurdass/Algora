@@ -12,6 +12,7 @@ const interpreter = createInterpreter(source, {
   input: async () => '42',
   maxSteps: 100_000,
   maxCallDepth: 100,
+  random: Math.random, // Gerador usado por aleatorio (valores em [0, 1)).
   onStep: snapshot => {
     if (snapshot.status === 'paused') {
       console.log(snapshot.line, snapshot.variables);
@@ -37,6 +38,8 @@ await interpreter.run();
 
 `onStep` recebe snapshots com `status` igual a `idle`, `running`, `paused`, `completed`, `stopped` ou `error`. Também há notificações de execução e término: destaque a linha somente quando o estado apropriado exigir. A pausa ocorre antes da instrução. Cabeçalhos de laços voltam a gerar checkpoints entre iterações. O mapa `variables` combina escopos visíveis; nomes locais sobrepõem globais e não representam uma pilha de chamadas completa.
 
-`input(prompt)` deve resolver uma string para cada destino de `leia`; `output(text)` recebe fragmentos, incluindo quebras de linha quando emitidas pelo programa. Um `AbortSignal` opcional também cancela a execução. Se o callback de entrada estiver aguardando uma interação externa, o adaptador deve resolver ou cancelar essa interação: o núcleo só verifica o cancelamento ao recuperar o controle.
+`input(prompt)` deve resolver uma string para cada destino de `leia`; `output(text)` recebe fragmentos, incluindo quebras de linha quando emitidas pelo programa. Um `AbortSignal` opcional também cancela a execução. O cancelamento também interrompe a espera por um callback de entrada que ainda não resolveu. O adaptador deve limpar sua interface de entrada pendente; uma resposta tardia não deve ser reutilizada em outra execução.
 
 `AlgoraError` possui `line` e mensagem. Erros sintáticos podem surgir ao construir a instância; erros de execução rejeitam `run()`. Cancelamento rejeita com `AbortError` e produz estado `stopped`. Os consumidores devem tratar a rejeição para não gerar erros não capturados.
+
+`random` injeta a fonte de aleatoriedade usada pelo comando `aleatorio`; deve retornar um número finito no intervalo `[0, 1)`. Isso permite entrada automática reproduzível nos testes. As funções `rand` e `randi` usam sua própria fonte padrão. Vetores estão sujeitos ao limite agregado de 1.000.000 de elementos nas declarações de cada escopo.
