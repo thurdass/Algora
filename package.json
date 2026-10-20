@@ -12,7 +12,7 @@
     "dev": "npm run dev -w @algora/desktop",
     "dev:web": "npm run dev:web -w @algora/desktop",
     "build": "npm run build -w @algora/desktop",
-    "test": "tsx --test packages/core/test/*.test.ts",
+    "test": "tsx --test packages/core/test/*.test.ts tests/cli.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && npm run typecheck -w @algora/desktop",
     "check": "npm run typecheck && npm test && npm run build",
     "cli": "tsx packages/cli/src/index.ts",
