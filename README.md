@@ -6,7 +6,7 @@ O editor Monaco oferece realce de sintaxe, autocompletar, trechos de código e a
 
 ## Executar
 
-Requer Node.js 22 ou superior e npm. No Linux, o aplicativo Electron também requer as bibliotecas gráficas do sistema.
+Requer Node.js 24 ou superior e npm. No Linux, o aplicativo Electron também requer as bibliotecas gráficas do sistema.
 
 ```bash
 npm ci
@@ -34,6 +34,8 @@ npm run cli -- examples/vetores.alg
 
 ```bash
 npm run check
+npm run test:e2e
+npm run test:desktop
 npm run dist:linux
 npm run dist:win
 ```
@@ -47,6 +49,8 @@ npm run dist:win
 - `apps/desktop`: editor React/Monaco e integração Electron com arquivos locais.
 - `examples`: algoritmos originais para experimentar.
 - `docs`: arquitetura, compatibilidade, API e investigação do executável fornecido.
+
+O levantamento local aceita sintaticamente **59 de 73** arquivos distribuídos com o VisualG (80,8%). Isso não garante execução equivalente; veja o [levantamento reproduzível](docs/compatibility-survey.md) e os recursos ainda ausentes.
 
 Consulte [arquitetura](docs/arquitetura.md), [API](docs/api.md) e [relatório REA](docs/engenharia-reversa.md). O código foi implementado de forma independente; o executável e os recursos proprietários do VisualG não são distribuídos. A investigação estática orienta requisitos e não comprova compatibilidade integral.
 
