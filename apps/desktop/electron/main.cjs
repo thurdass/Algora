@@ -60,7 +60,7 @@ app.whenReady().then(() => {
   });
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   win.webContents.on("will-navigate", (event) => event.preventDefault());
-  if (process.argv.includes("--dev")) win.loadURL("http://127.0.0.1:5173");
+  if (process.argv.includes("--dev")) win.loadURL("http://127.0.0.1:5187");
   else win.loadFile(path.join(__dirname, "../dist/index.html"));
 });
 app.on("window-all-closed", () => app.quit());
