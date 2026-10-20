@@ -1,0 +1,17 @@
+{
+  "name": "algora", "version": "0.1.0", "private": true, "type": "module",
+  "description": "IDE moderna e interpretador independente para VisualG/Portugol",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev": "npm run dev -w @algora/desktop",
+    "dev:web": "npm run dev:web -w @algora/desktop",
+    "build": "npm run build -w @algora/desktop",
+    "test": "tsx --test packages/core/test/*.test.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json && npm run typecheck -w @algora/desktop",
+    "check": "npm run typecheck && npm test && npm run build",
+    "cli": "tsx packages/cli/src/index.ts",
+    "dist:linux": "npm run dist:linux -w @algora/desktop",
+    "dist:win": "npm run dist:win -w @algora/desktop"
+  },
+  "devDependencies": {"typescript": "^5.9.3", "tsx": "^4.20.6", "@types/node": "^24.10.0"}
+}
