@@ -20,7 +20,8 @@
     "dist:win": "npm run dist:win -w @algora/desktop",
     "test:e2e": "playwright install chromium && playwright test",
     "format": "prettier --write \"packages/**/*.ts\" \"apps/desktop/src/**/*.{ts,tsx,css}\"",
-    "test:desktop": "tsx --test tests/desktop.test.ts"
+    "test:desktop": "tsx --test tests/desktop.test.ts",
+    "postinstall": "node scripts/install-electron.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
