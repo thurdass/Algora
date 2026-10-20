@@ -38,6 +38,8 @@ Não há suporte a registros, parâmetros vetoriais, acesso a arquivos, comandos
 
 A cobertura deve ser avaliada em três níveis: aceitação pelo parser, execução sem erro e equivalência de saída com o original. Um arquivo sintaticamente aceito ainda pode referenciar recursos não implementados. Os testes JUnit exercitam algoritmos originais e os comportamentos esperados do Algora.
 
+O [levantamento da implementação Java](../interpreter/compatibility-survey.md) mediu **58 de 73 arquivos aceitos pelo parser (79,5%)**, com 15 rejeições, na instalação local fornecida. Essa porcentagem descreve aceitação sintática e construção da AST desse conjunto. Foram executados também quatro algoritmos originais locais: fatorial com entrada 5 produziu 120; os vetores finais dos exemplos de insertion sort e bubble sort foram verificados em ordem crescente; o exemplo de interrupção terminou. Nenhum desses arquivos foi redistribuído. O relatório conserva método, identidade do conjunto e resultados por arquivo.
+
 A investigação REA foi estática. Não houve comparação automatizada da execução com o VisualG. Mensagens de erro, formatação completa e casos extremos exigem verificações específicas. O [levantamento do protótipo TypeScript](historico/levantamento-typescript.md), incluindo seus 59 de 73 arquivos aceitos, é histórico e não mede a implementação Java.
 
 Linux e Windows utilizam o mesmo núcleo, com bibliotecas JavaFX e instaladores específicos. Uma compilação bem-sucedida não substitui testes gráficos, de entrada, arquivos e instalação em cada sistema.
