@@ -83,7 +83,7 @@ export class Interpreter {
   }
   getSnapshot(): Snapshot {
     const variables: Record<string, Value> = {};
-    for (const scope of this.scopes)
+    for (const scope of [this.scopes[0], this.scopes[this.scopes.length - 1]])
       for (const [n, c] of scope) variables[n] = structuredClone(c.value);
     return {
       line: this.line,
@@ -143,10 +143,9 @@ export class Interpreter {
       await new Promise((resolve) => setTimeout(resolve, 0));
   }
   private cell(name: string) {
-    for (let i = this.scopes.length - 1; i >= 0; i--) {
-      const c = this.scopes[i].get(name);
-      if (c) return c;
-    }
+    const local = this.scopes[this.scopes.length - 1].get(name);
+    const global = this.scopes[0].get(name);
+    if (local ?? global) return (local ?? global)!;
     throw new AlgoraError(`Variável não declarada: ${name}`, this.line);
   }
   private async reference(expr: Expr) {

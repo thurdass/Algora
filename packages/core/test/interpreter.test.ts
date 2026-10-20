@@ -197,3 +197,27 @@ fimalgoritmo`;
   await execute(source, { output: (t) => (output += t) });
   assert.equal(output, "ab\n");
 });
+
+test("routines resolve own locals and globals without leaking caller locals", async () => {
+  const source = `algoritmo "escopo"
+var
+x:inteiro
+funcao global():inteiro
+inicio
+retorne x
+fimfuncao
+funcao caller():inteiro
+var
+x:inteiro
+inicio
+x <- 99
+retorne global()
+fimfuncao
+inicio
+x <- 7
+escreval(caller())
+fimalgoritmo`;
+  let output = "";
+  await execute(source, { output: (t) => (output += t) });
+  assert.equal(output, "7\n");
+});
