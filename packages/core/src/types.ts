@@ -10,7 +10,12 @@ export type Expr =
   | { kind: "unary"; op: string; right: Expr }
   | { kind: "binary"; op: string; left: Expr; right: Expr }
   | { kind: "call"; name: string; args: Expr[] };
-export type Decl = { name: string; type: string; ranges: [number, number][] };
+export type Decl = {
+  name: string;
+  type: string;
+  ranges: [number, number][];
+  constant?: Value;
+};
 export type Stmt = { kind: string; line: number; [key: string]: any };
 export type Routine = {
   name: string;

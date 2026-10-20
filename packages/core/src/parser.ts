@@ -1,9 +1,18 @@
-import type { Token, Expr, Decl, Stmt, Routine, Program } from "./types.js";
+import type {
+  Token,
+  Expr,
+  Decl,
+  Stmt,
+  Routine,
+  Program,
+  Value,
+} from "./types.js";
 import { AlgoraError } from "./diagnostics.js";
 import { tokenize } from "./lexer.js";
 class Parser {
   tokens: Token[];
   i = 0;
+  constants = new Map<string, Value>();
   constructor(source: string) {
     this.tokens = tokenize(source);
   }
@@ -102,11 +111,83 @@ class Parser {
     }
     return left;
   }
+  constantValue(expr: Expr): Value {
+    if (expr.kind === "literal") return expr.value;
+    if (
+      expr.kind === "ref" &&
+      !expr.indices.length &&
+      this.constants.has(expr.name)
+    )
+      return this.constants.get(expr.name)!;
+    if (expr.kind === "unary") {
+      const v = this.constantValue(expr.right);
+      return expr.op === "-" ? -Number(v) : expr.op === "+" ? Number(v) : !v;
+    }
+    if (expr.kind === "binary") {
+      const a = this.constantValue(expr.left),
+        b = this.constantValue(expr.right);
+      switch (expr.op) {
+        case "+":
+          return typeof a === "string" || typeof b === "string"
+            ? String(a) + String(b)
+            : Number(a) + Number(b);
+        case "-":
+          return Number(a) - Number(b);
+        case "*":
+          return Number(a) * Number(b);
+        case "/":
+          return Number(a) / Number(b);
+        case "^":
+          return Number(a) ** Number(b);
+        case "%":
+        case "mod":
+          return Number(a) % Number(b);
+      }
+    }
+    throw new AlgoraError("Expressão constante inválida", this.t.line);
+  }
   declarations(): Decl[] {
     const out: Decl[] = [];
-    this.accept("var");
     this.lines();
+    this.accept("dos");
+    this.lines();
+    let constantSection = false;
     while (!["inicio", "funcao", "procedimento", ""].includes(this.t.text)) {
+      if (this.accept("var")) {
+        constantSection = false;
+        this.lines();
+        continue;
+      }
+      if (this.accept("const")) {
+        constantSection = true;
+        this.lines();
+        continue;
+      }
+      if (this.accept("dos")) {
+        this.lines();
+        continue;
+      }
+      if (constantSection && this.t.text !== "tipo") {
+        const name = this.name();
+        this.expect("=");
+        const value = this.constantValue(this.expr());
+        if (typeof value === "number" && !Number.isFinite(value))
+          throw new AlgoraError("Constante numérica inválida", this.t.line);
+        this.constants.set(name, value);
+        out.push({
+          name,
+          type:
+            typeof value === "number"
+              ? "real"
+              : typeof value === "boolean"
+                ? "logico"
+                : "caractere",
+          ranges: [],
+          constant: value,
+        });
+        this.lines();
+        continue;
+      }
       const names = [this.name()];
       while (this.accept(",")) names.push(this.name());
       this.expect(":");
@@ -115,11 +196,9 @@ class Parser {
       if (type === "vetor") {
         this.expect("[");
         do {
-          let sign = this.accept("-") ? -1 : 1;
-          const low = sign * Number(this.take().text);
+          const low = Number(this.constantValue(this.expr()));
           this.expect("..");
-          sign = this.accept("-") ? -1 : 1;
-          const high = sign * Number(this.take().text);
+          const high = Number(this.constantValue(this.expr()));
           if (
             !Number.isInteger(low) ||
             !Number.isInteger(high) ||
@@ -162,6 +241,24 @@ class Parser {
     const t = this.take(),
       line = t.line,
       k = t.text;
+    if (k === "dos") return { kind: k, line };
+    if (k === "eco") {
+      const mode = this.name();
+      if (!["on", "off"].includes(mode))
+        throw new AlgoraError("eco requer on ou off", line);
+      return { kind: k, line, enabled: mode === "on" };
+    }
+    if (k === "aleatorio") {
+      if (this.is("on") || this.is("off"))
+        return { kind: k, line, enabled: this.take().text === "on" };
+      const low = this.expr();
+      this.expect(",");
+      const high = this.expr();
+      const decimals = this.accept(",")
+        ? this.expr()
+        : { kind: "literal", value: 0 };
+      return { kind: k, line, enabled: true, low, high, decimals };
+    }
     if (k === "se") {
       const condition = this.expr();
       this.expect("entao");
@@ -178,9 +275,19 @@ class Parser {
       return { kind: k, line, condition, body };
     }
     if (k === "repita") {
-      const body = this.block(["ate"]);
-      this.expect("ate");
-      return { kind: k, line, body, condition: this.expr() };
+      const body = this.block(["ate", "ate_que", "fimrepita"]);
+      if (this.accept("fimrepita"))
+        return {
+          kind: k,
+          line,
+          body,
+          condition: { kind: "literal", value: false },
+        };
+      this.take();
+      const condition = this.expr();
+      this.lines();
+      this.accept("fimrepita");
+      return { kind: k, line, body, condition };
     }
     if (k === "para") {
       const name = this.name();
@@ -200,10 +307,14 @@ class Parser {
       const value = this.expr();
       this.accept("faca");
       this.lines();
-      const cases: { values: Expr[]; body: Stmt[] }[] = [];
+      const cases: { values: { from: Expr; to?: Expr }[]; body: Stmt[] }[] = [];
       while (this.accept("caso")) {
-        const values = [this.expr()];
-        while (this.accept(",")) values.push(this.expr());
+        const values: { from: Expr; to?: Expr }[] = [];
+        do {
+          const from = this.expr();
+          const to = this.accept("ate") ? this.expr() : undefined;
+          values.push({ from, to });
+        } while (this.accept(","));
         cases.push({
           values,
           body: this.block(["caso", "outrocaso", "fimescolha"]),
@@ -281,6 +392,7 @@ class Parser {
       }
       if (this.accept(":")) this.name();
       this.lines();
+      const globalConstants = new Map(this.constants);
       const declarations = this.declarations();
       this.expect("inicio");
       const body = this.block([
@@ -289,6 +401,7 @@ class Parser {
       this.take();
       this.lines();
       routines.push({ name, params, declarations, body });
+      this.constants = globalConstants;
     }
     this.expect("inicio");
     const body = this.block(["fimalgoritmo"]);

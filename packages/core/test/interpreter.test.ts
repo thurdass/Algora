@@ -229,3 +229,96 @@ test("bare escreval produces a blank line", async () => {
   });
   assert.equal(output, "\nok\n\n");
 });
+
+test("constants evaluate expressions, define vector bounds and are immutable", async () => {
+  const source = `algoritmo "constantes"
+const
+base = 2
+limite = base * 3 + 1
+saudacao = "ola" + "!"
+var
+v:vetor[-base..limite] de inteiro
+inicio
+v[limite] <- base
+escreval(saudacao, v[7])
+fimalgoritmo`;
+  let output = "";
+  const result = await execute(source, { output: (t) => (output += t) });
+  assert.equal(output, "ola!2\n");
+  assert.equal(result.variables.limite, 7);
+  await assert.rejects(
+    execute(source.replace("v[limite] <- base", "base <- 9")),
+    /alterar uma constante/,
+  );
+  assert.throws(
+    () => parse(source.replace("base = 2", "base = 1 / 0")),
+    /Constante numérica inválida/,
+  );
+});
+test("DOS directive, random input precision, echo and restoration of normal input", async () => {
+  const source = `algoritmo "random"
+dos
+var
+x:inteiro
+y:real
+inicio
+eco off
+aleatorio 2,4
+leia(x)
+aleatorio 1,2,2
+leia(y)
+eco on
+aleatorio 7,7
+leia(x)
+aleatorio off
+leia(x)
+escreval(x, " ",y:0:2)
+fimalgoritmo`;
+  let output = "";
+  let reads = 0;
+  const result = await execute(source, {
+    input: async () => {
+      reads++;
+      return "9";
+    },
+    output: (t) => (output += t),
+    random: () => 0.5,
+  });
+  assert.equal(result.variables.y, 1.5);
+  assert.equal(result.variables.x, 9);
+  assert.equal(reads, 1);
+  assert.equal(output, "7\n9 1.50\n");
+  await assert.rejects(
+    execute(source.replace("aleatorio 2,4", "aleatorio 4,2")),
+    /Configuração aleatória inválida/,
+  );
+});
+test("choice ranges include both bounds and preserve case ordering", async () => {
+  for (const input of ["4", "5", "7", "10", "11"]) {
+    let output = "";
+    await execute(
+      program(
+        "n:inteiro",
+        'leia(n)\nescolha n\ncaso 5 ate 7, 4\nescreval("medio")\ncaso 8 ate 10\nescreval("alto")\noutrocaso\nescreval("outro")\nfimescolha',
+      ),
+      { input: async () => input, output: (t) => (output += t) },
+    );
+    assert.equal(
+      output,
+      Number(input) <= 7
+        ? "medio\n"
+        : Number(input) <= 10
+          ? "alto\n"
+          : "outro\n",
+    );
+  }
+});
+test("unconditional repita ends with interrompa and ate_que accepts until condition", async () => {
+  const result = await execute(
+    program(
+      "n:inteiro",
+      "repita\nn <- n + 1\nse n = 3 entao\ninterrompa\nfimse\nfimrepita\nrepita\nn <- n + 1\nate_que n = 5",
+    ),
+  );
+  assert.equal(result.variables.n, 5);
+});

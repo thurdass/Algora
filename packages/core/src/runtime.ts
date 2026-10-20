@@ -14,8 +14,14 @@ export type InterpreterOptions = {
   signal?: AbortSignal;
   maxSteps?: number;
   maxCallDepth?: number;
+  random?: () => number;
 };
-type Cell = { value: Value; type: string; ranges: [number, number][] };
+type Cell = {
+  value: Value;
+  type: string;
+  ranges: [number, number][];
+  readonly?: boolean;
+};
 class BreakSignal {}
 class ReturnSignal {
   constructor(public value: Value) {}
@@ -32,6 +38,9 @@ export class Interpreter {
   private stopped = false;
   private cancelInput?: () => void;
   private depth = 0;
+  private randomInput:
+    { low: number; high: number; decimals: number } | undefined;
+  private echo = true;
   constructor(
     source: string,
     private options: InterpreterOptions = {},
@@ -77,7 +86,12 @@ export class Interpreter {
       allocated += slots(d.ranges);
       if (allocated > 1000000)
         throw new AlgoraError("Vetor excede limite de memória", 1);
-      scope.set(d.name, { value: init(0), type: d.type, ranges: d.ranges });
+      scope.set(d.name, {
+        value: d.constant ?? init(0),
+        type: d.type,
+        ranges: d.ranges,
+        readonly: d.constant !== undefined,
+      });
     }
     return scope;
   }
@@ -187,6 +201,8 @@ export class Interpreter {
   }
   private async set(expr: Expr, value: Value) {
     const { cell, indices } = await this.reference(expr);
+    if (cell.readonly)
+      throw new AlgoraError("Não é permitido alterar uma constante", this.line);
     value = this.convert(value, cell.type);
     if (!indices.length) cell.value = value;
     else {
@@ -381,6 +397,33 @@ export class Interpreter {
   private async statement(s: Stmt) {
     await this.checkpoint(s.line);
     switch (s.kind) {
+      case "dos":
+        break;
+      case "eco":
+        this.echo = s.enabled;
+        break;
+      case "aleatorio": {
+        if (!s.enabled) {
+          this.randomInput = undefined;
+          break;
+        }
+        const low = s.low ? Number(await this.eval(s.low)) : 0;
+        const high = s.high ? Number(await this.eval(s.high)) : 100;
+        const decimals = s.decimals ? Number(await this.eval(s.decimals)) : 0;
+        if (
+          !Number.isFinite(low) ||
+          !Number.isFinite(high) ||
+          low > high ||
+          !Number.isInteger(decimals) ||
+          decimals < 0 ||
+          decimals > 10 ||
+          Math.max(Math.abs(low), Math.abs(high)) * 10 ** decimals >
+            Number.MAX_SAFE_INTEGER
+        )
+          throw new AlgoraError("Configuração aleatória inválida", s.line);
+        this.randomInput = { low, high, decimals };
+        break;
+      }
       case "assign":
         await this.set(s.target, await this.eval(s.value));
         break;
@@ -411,9 +454,38 @@ export class Interpreter {
       }
       case "leia":
         for (const a of s.args) {
-          if (!this.options.input)
-            throw new AlgoraError("Entrada não disponível", s.line);
-          const response = await this.readInput();
+          let response: string;
+          if (this.randomInput) {
+            const { cell } = await this.reference(a.expr);
+            if (!["inteiro", "real"].includes(cell.type))
+              throw new AlgoraError(
+                "Entrada aleatória implementada apenas para números",
+                s.line,
+              );
+            const { low, high, decimals } = this.randomInput;
+            const scale = cell.type === "inteiro" ? 1 : 10 ** decimals;
+            const min = Math.ceil(low * scale),
+              max = Math.floor(high * scale);
+            if (max < min)
+              throw new AlgoraError(
+                "Intervalo aleatório sem valores representáveis",
+                s.line,
+              );
+            const sample = (this.options.random ?? Math.random)();
+            if (!Number.isFinite(sample) || sample < 0 || sample >= 1)
+              throw new AlgoraError(
+                "Gerador aleatório deve retornar valor em [0,1)",
+                s.line,
+              );
+            response = String(
+              (min + Math.floor(sample * (max - min + 1))) / scale,
+            );
+            if (this.echo) this.options.output?.(response + "\n");
+          } else {
+            if (!this.options.input)
+              throw new AlgoraError("Entrada não disponível", s.line);
+            response = await this.readInput();
+          }
           this.check();
           await this.set(a.expr, response);
         }
@@ -464,7 +536,12 @@ export class Interpreter {
         let body = s.otherwise;
         outer: for (const c of s.cases)
           for (const e of c.values)
-            if ((await this.eval(e)) === value) {
+            if (
+              e.to
+                ? value >= (await this.eval(e.from)) &&
+                  value <= (await this.eval(e.to))
+                : (await this.eval(e.from)) === value
+            ) {
               body = c.body;
               break outer;
             }

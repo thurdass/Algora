@@ -25,14 +25,21 @@ O depurador pausa **antes** de executar a instrução indicada. `getSnapshot()` 
 
 - Palavras chave sem distinção entre maiúsculas, minúsculas e acentos; comentários `//`.
 - Tipos inteiro, real, lógico e caractere; vetores multidimensionais com limites declarados e checagem de índices.
+- Constantes com expressões aritméticas/textuais, usadas inclusive em limites vetoriais; atribuir a uma constante produz erro.
 - Atribuição `<-` e `:=`; aritmética, comparações, operadores lógicos com curto circuito, potência, divisão inteira e módulo.
 - `escreva`, `escreval` (inclusive sem parênteses para linha vazia), formatação por largura/casas decimais e `leia` assíncrono com conversão de tipos.
-- `se/senao`, `para/passo`, `enquanto`, `repita/ate`, `escolha/caso/outrocaso` e `interrompa`.
+- `se/senao`, `para/passo`, `enquanto`, `repita/ate`, `escolha/caso/outrocaso` (incluindo intervalos `caso 5 ate 7`) e `interrompa`; `repita` também admite `fimrepita` e `ate_que`.
 - Funções com `retorne`, procedimentos, recursão, parâmetros escalares e parâmetros escalares por referência.
 - Funções matemáticas e de texto comuns: `abs`, `raizq`, `quad`, `int`, `sen`, `cos`, `tan`, `arctan`, `exp`, `log`, `logn`, `pi()`, `compr`, `maiusc`, `minusc`, `copia`, `pos`, `asc`, `carac`, `numpcarac`, `caracpnum`, `rand` e `randi`.
 
-A compatibilidade é parcial e explicitamente testada, não uma reprodução integral do VisualG. Registros, arquivos, parâmetros vetoriais, comandos de aleatorização de entrada, comandos gráficos e opções específicas da aplicação original ainda não são suportados. `limpatela` emite sequência ANSI; `pausa` é aceita sem bloquear. A função `pi` exige `pi()`. Os argumentos são separados por vírgulas; grupos de parâmetros por ponto e vírgula. Texto deve permanecer em uma linha. Conteúdo depois de `fimalgoritmo` é rejeitado.
+A compatibilidade é parcial e explicitamente testada, não uma reprodução integral do VisualG. Registros, arquivos, parâmetros vetoriais, comandos gráficos e opções específicas da aplicação original ainda não são suportados. `limpatela` emite sequência ANSI; `pausa` é aceita sem bloquear. A função `pi` exige `pi()`. Os argumentos são separados por vírgulas; grupos de parâmetros por ponto e vírgula. Texto deve permanecer em uma linha. Conteúdo depois de `fimalgoritmo` é rejeitado.
 
 As sintaxes das declarações e dos comandos foram conferidas nos exemplos distribuídos na pasta `Exemplos` da instalação fornecida, sem incorporar esses arquivos ao projeto. Os testes usam algoritmos novos.
 
 Execute os testes a partir da raiz com `npx tsx --test packages/core/test/*.test.ts`.
+
+### Diretivas e geração de entrada
+
+`dos` é aceito como diretiva de apresentação, sem emular DOS ou mudar o terminal. `aleatorio on` ativa geração numérica de entrada de 0 a 100; `aleatorio min,max[,decimais]` configura limites inclusivos e casas decimais (0 a 10). `leia` usa esses valores no lugar do callback de entrada até `aleatorio off`. Para inteiros, a geração usa valores inteiros dentro do intervalo; para reais, uma grade decimal. Intervalos inválidos e geração para variáveis de texto/lógicas produzem erro explícito. Não se reivindica equivalência do gerador com o VisualG. `InterpreterOptions.random` permite injetar um gerador que retorne valores no intervalo [0,1), facilitando testes reproduzíveis.
+
+`eco on/off` controla a exibição dos valores gerados automaticamente (padrão ligado). A exibição da entrada humana pertence à interface hospedeira. Comandos desconhecidos continuam produzindo erro; não são descartados silenciosamente. Veja o [levantamento dos exemplos](../../docs/compatibility-survey.md) para a cobertura medida e suas limitações.
