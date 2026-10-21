@@ -1,45 +1,27 @@
-# Direção visual da interface
+# Interface do Algora
 
-A interface do Algora é uma bancada de programação: o conteúdo principal é o algoritmo, e a inspeção acompanha a execução. A stack permanece JavaFX 21 e RichTextFX.
+A direção visual segue as referências do IntelliJ IDEA e VS Code fornecidas pelo usuário: superfícies contínuas, barras compactas, abas e terminal inferior. A faixa lateral reúne os controles reais de arquivos e depuração. O explorador atual lista os algoritmos abertos; navegação completa por diretórios ainda não está implementada.
 
-## Tokens
+## Plano visual
 
-| Papel | Cor |
-| --- | --- |
-| Editor / grafite | `#171C24` |
-| Painéis / ardósia | `#202733` |
-| Divisores | `#303A49` |
-| Texto principal | `#E1E6ED` |
-| Texto secundário | `#94A0B1` |
-| Ação e seleção / azul técnico | `#85ADD6` |
-
-IBM Plex Sans nos controles e IBM Plex Mono no código e terminal. As fontes são distribuídas localmente com sua licença OFL; a interface não depende de fontes instaladas ou de rede. Escala de 11, 12, 13, 14 e 18 px. Texto corrente alinhado à esquerda, rótulos em caixa de frase, foco de teclado visível.
-
-## Layout e revisão antes da implementação
-
-Foram comparadas duas estruturas:
+Paleta base Grafite: editor `#1E1E1E`, painéis `#252526`, divisórias `#3C3C3C`, texto `#D4D4D4`, texto secundário `#969696`, destaque `#3794FF`. IBM Plex Sans na interface e IBM Plex Mono no editor e terminal, distribuídas com o aplicativo.
 
 ```text
-A: ferramentas duplicadas em uma barra lateral
-[marca e menus                                      ]
-[ícones][explorador][editor             ][inspeção    ]
-                  [terminal           ]
-
-B: bancada com painéis recolhíveis (escolhida)
-[algora | menus                 arquivo | painéis   ]
-[Arquivos  ][aba do arquivo / ações     ][Depuração  ]
-[          ][código                    ][variáveis  ]
-[          ][                          ][paradas    ]
-[          ][Terminal / estado         ][           ]
-[estado de execução                     linha/coluna]
+Marca · Arquivo · Editar · Exibir · Ajuda
+┌──┬────────────┬────────────────────────┬──────────┐
+│  │Explorador  │ Ações de execução      │Depuração │
+│  │Algoritmos  │ Abas                   │Variáveis │
+│  │abertos     │ Editor RichTextFX      │Paradas   │
+│  │            ├────────────────────────┤          │
+│  │            │ Terminal / entrada     │          │
+└──┴────────────┴────────────────────────┴──────────┘
+Estado                                  Linha/coluna
 ```
 
-A revisão eliminou a barra de ícones duplicados, avatar sem função, slogans, cartões de dicas e rótulos em caixa alta. O azul identifica interação e o ponto de execução; a identidade vem da composição e da tipografia. Separadores indicam limites funcionais, com superfícies contínuas e sem sombras decorativas. Os ícones são vetores com traço consistente.
+Alinhamento à esquerda e divisórias discretas delimitam funções. A revisão das referências substituiu o anterior azul acinzentado por cinza neutro e trouxe os controles dos painéis para uma faixa lateral. Não há botões decorativos simulando Git, pesquisa ou outros recursos ausentes.
 
-Os painéis laterais podem ser recolhidos. Em janelas compactas, a inspeção e depois os arquivos cedem espaço ao código. O terminal continua redimensionável. Não há animação automática. Estados vazios orientam a ação: executar, depurar ou adicionar um ponto de parada.
+## Temas
 
-## Verificação visual
+Em **Exibir → Tema de cores**, selecione Grafite, Dracula, Nord, Solarizado escuro, Claro ou Solarizado claro. A mudança é imediata e a escolha é salva pelas preferências locais do Java, por usuário. Editor, sintaxe, seleção, linha atual, terminal, menus e depurador compartilham os tokens semânticos de cada paleta. Não há download de temas nem fontes.
 
-A revisão usa capturas reais do JavaFX em tamanho normal e compacto, além dos testes de entrada, execução, depuração e autocompletar. Os testes de composição verificam recolhimento dos painéis e tamanho útil do editor.
-
-A revisão das capturas corrigiu o corte do texto de orientação e o acompanhamento da saída do terminal. O estado final da execução permanece visível. Capturas: [normal](assets/algora.png), [compacta](assets/algora-compacto.png) e [após execução](assets/algora-execucao.png).
+As janelas compactas recolhem painéis; Ctrl+B alterna arquivos e Ctrl+Shift+D alterna depuração. Os testes gráficos exercitam os seis temas, persistência da seleção, execução, entrada, autocompletar, pontos de parada e layout compacto. As capturas em `desktop/build/screenshots` permitem revisar cada paleta.

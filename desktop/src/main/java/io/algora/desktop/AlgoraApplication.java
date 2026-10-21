@@ -208,7 +208,9 @@ public final class AlgoraApplication extends Application {
     filesPanel = sidebar();
     inspectionPanel = inspector();
     VBox editor = editorPane();
-    HBox workspace = new HBox(filesPanel, editor, inspectionPanel);
+    VBox rail = new VBox(8, filesToggle, inspectionToggle);
+    rail.getStyleClass().add("activity-rail");
+    HBox workspace = new HBox(rail, filesPanel, editor, inspectionPanel);
     workspace.setId("workspace");
     HBox.setHgrow(editor, Priority.ALWAYS);
     root.setCenter(workspace);
@@ -245,6 +247,7 @@ public final class AlgoraApplication extends Application {
               if (session != null) session.step();
             });
     stage.setScene(scene);
+    applyTheme(EditorTheme.saved());
     stage.setTitle("Algora — seu próximo algoritmo");
     stage.setMinWidth(760);
     stage.setMinHeight(560);
@@ -299,6 +302,11 @@ public final class AlgoraApplication extends Application {
     if (args.contains("--smoke-test")) smokeTest();
   }
 
+  void applyTheme(EditorTheme theme) {
+    stage.getScene().getRoot().setStyle(theme.css());
+    EditorTheme.save(theme);
+  }
+
   private HBox header() {
     Label logo = new Label("{ }");
     logo.getStyleClass().add("brand-icon");
@@ -342,34 +350,42 @@ public final class AlgoraApplication extends Application {
     showFiles.setOnAction(e -> togglePanel(filesPanel));
     MenuItem showInspector = new MenuItem("Depuração");
     showInspector.setOnAction(e -> togglePanel(inspectionPanel));
-    view.getItems().addAll(showFiles, showInspector);
+    Menu themes = new Menu("Tema de cores");
+    ToggleGroup themeGroup = new ToggleGroup();
+    for (EditorTheme theme : EditorTheme.values()) {
+      RadioMenuItem item = new RadioMenuItem(theme.label);
+      item.setToggleGroup(themeGroup);
+      item.setSelected(theme == EditorTheme.saved());
+      item.setOnAction(e -> applyTheme(theme));
+      themes.getItems().add(item);
+    }
+    view.getItems().addAll(showFiles, showInspector, new SeparatorMenuItem(), themes);
     MenuBar menu = new MenuBar(file, edit, view, help);
     Region space = new Region();
     HBox.setHgrow(space, Priority.ALWAYS);
     filesToggle =
-        iconButton(
-            "sidebar", "Mostrar ou ocultar arquivos (Ctrl+B)", () -> togglePanel(filesPanel));
+        iconButton("files", "Mostrar ou ocultar arquivos (Ctrl+B)", () -> togglePanel(filesPanel));
     filesToggle.setId("filesToggle");
     inspectionToggle =
         iconButton(
-            "inspector",
+            "debug",
             "Mostrar ou ocultar depuração (Ctrl+Shift+D)",
             () -> togglePanel(inspectionPanel));
     inspectionToggle.setId("inspectionToggle");
-    HBox box = new HBox(9, logo, brand, menu, space, filesToggle, inspectionToggle);
+    HBox box = new HBox(9, logo, brand, menu, space);
     box.getStyleClass().add("header");
     return box;
   }
 
   private VBox sidebar() {
-    Label title = heading("Arquivos");
+    Label title = heading("Explorador");
     Button plus = iconButton("plus", "Novo algoritmo (Ctrl+N)", this::newFile);
     Button open = iconButton("files", "Abrir arquivo (Ctrl+O)", this::open);
     Region space = new Region();
     HBox.setHgrow(space, Priority.ALWAYS);
     HBox top = new HBox(5, title, space, open, plus);
     top.getStyleClass().add("panel-heading");
-    Label project = new Label("Algoritmos");
+    Label project = new Label("▾ Algoritmos abertos");
     project.setGraphic(Icons.create("files"));
     project.setGraphicTextGap(8);
     project.getStyleClass().add("project-heading");

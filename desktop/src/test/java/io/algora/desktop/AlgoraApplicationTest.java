@@ -65,6 +65,38 @@ class AlgoraApplicationTest {
         });
   }
 
+  @Test
+  void themesRecolorEverySurfaceAndPersistSelection() throws Exception {
+    EditorTheme original = EditorTheme.saved();
+    try {
+      for (EditorTheme theme : EditorTheme.values()) {
+        fx(
+            () -> {
+              app.applyTheme(theme);
+              stage.getScene().getRoot().applyCss();
+              stage.getScene().getRoot().layout();
+              assertEquals(theme, EditorTheme.saved());
+              assertTrue(stage.getScene().getRoot().getStyle().contains("-alg-keyword:"));
+              capture("Algora-tema-" + theme.name() + ".png");
+              return null;
+            });
+      }
+      fx(
+          () -> {
+            app.applyTheme(EditorTheme.GRAPHITE);
+            stage.getScene().getRoot().applyCss();
+            capture("Algora.png");
+            return null;
+          });
+    } finally {
+      fx(
+          () -> {
+            app.applyTheme(original);
+            return null;
+          });
+    }
+  }
+
   private static <T> T fx(Callable<T> action) throws Exception {
     FutureTask<T> task = new FutureTask<>(action);
     Platform.runLater(task);
