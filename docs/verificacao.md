@@ -1,8 +1,8 @@
 # Verificação Java 21
 
-Data: 20/10/2026. Código validado: `db629903b872eb6804dfdda0718de26234942e43`.
+Data: 20/10/2026. Código validado: `a32b765ac2236223e21a62cf52a731214743a049`.
 
-A [execução de CI](https://github.com/thurdass/Algora/actions/runs/39517404896) terminou com sucesso nos runners `ubuntu-latest` e `windows-latest`. Foram usados JDK 21, JavaFX 21.0.13, ANTLR 4.13.2, RichTextFX 0.11.7, Gradle 9.7.1 e JUnit 5.11.4. Não há dependência de Node.js, Electron ou Monaco no aplicativo Java.
+A [execução de CI](https://github.com/thurdass/Algora/actions/runs/39520018378) terminou com sucesso nos runners `ubuntu-latest` e `windows-latest`. Foram usados JDK 21, JavaFX 21.0.13, ANTLR 4.13.2, RichTextFX 0.11.7, Gradle 9.7.1 e JUnit 5.11.4. A interface redesenhada usa fontes IBM Plex distribuídas localmente e ícones vetoriais nativos. Não há dependência de Node.js, Electron ou Monaco no aplicativo Java.
 
 ## Testes
 
@@ -10,12 +10,12 @@ A [execução de CI](https://github.com/thurdass/Algora/actions/runs/39517404896
 | --- | ---: |
 | Interpretador | 14 |
 | CLI | 3 |
-| Interface JavaFX/RichTextFX | 4 |
-| Total | 21 |
+| Interface JavaFX/RichTextFX | 5 |
+| Total | 22 |
 
 Na verificação local, todos passaram, sem falhas nem testes ignorados. O build e os testes gráficos também passaram nos dois sistemas da CI.
 
-O núcleo cobre análise ANTLR e AST, entradas tipadas, vetores e limites, controle de fluxo, constantes, recursão, escopos, funções, formatação, depuração e cancelamento de entrada bloqueada. A CLI verifica entrada redirecionada, EOF, erros e Windows-1252. Os testes JavaFX exercitam entrada e saída interativas, pausa/passo/parada, recuperação após erro, autocompletar e pontos de parada.
+O núcleo cobre análise ANTLR e AST, entradas tipadas, vetores e limites, controle de fluxo, constantes, recursão, escopos, funções, formatação, depuração e cancelamento de entrada bloqueada. A CLI verifica entrada redirecionada, EOF, erros e Windows-1252. Os testes JavaFX exercitam entrada e saída interativas, pausa/passo/parada, recuperação após erro, autocompletar, pontos de parada e recolhimento dos painéis em janelas compactas.
 
 ## Pacotes nativos
 
