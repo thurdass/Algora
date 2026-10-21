@@ -1,5 +1,6 @@
 package io.algora.desktop;
 
+import io.algora.desktop.editor.PortugolEditorSupport;
 import io.algora.interpreter.AlgoraEngine;
 import io.algora.interpreter.DebugSession;
 import io.algora.interpreter.Snapshot;
@@ -11,7 +12,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
@@ -30,7 +30,6 @@ import javafx.stage.Stage;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
-import org.fxmisc.richtext.model.StyleSpansBuilder;
 
 /** Desktop shell; all language execution belongs to the independent interpreter module. */
 public final class AlgoraApplication extends Application {
@@ -49,18 +48,6 @@ public final class AlgoraApplication extends Application {
           + "      escreval(\"Sua próxima ideia começa aqui. Passo \", contador)\n"
           + "   fimpara\n"
           + "fimalgoritmo\n";
-  private static final String[] KEYWORDS =
-      ("algoritmo var inicio fimalgoritmo inteiro real caractere caracter logico verdadeiro falso"
-              + " se entao senao fimse para de ate passo faca fimpara enquanto fimenquanto repita"
-              + " escolha caso outrocaso fimescolha procedimento fimprocedimento funcao fimfuncao"
-              + " retorne leia escreva escreval e ou nao div mod interrompa")
-          .split(" ");
-  private static final Pattern TOKENS =
-      Pattern.compile(
-          "(?<COMMENT>//[^\\n]*)|(?<STRING>\"[^\"\\n]*\"|'[^'\\n]*')|(?<KEYWORD>\\b(?:"
-              + String.join("|", KEYWORDS)
-              + ")\\b)|(?<NUMBER>\\b\\d+(?:\\.\\d+)?\\b)",
-          Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
   private final TabPane tabs = new TabPane();
   private final ListView<Document> explorer = new ListView<>();
   private final Map<Tab, Document> documents = new LinkedHashMap<>();
@@ -116,12 +103,12 @@ public final class AlgoraApplication extends Application {
             return new HBox(point, LineNumberFactory.get(editor).apply(line));
           });
       editor.replaceText(content);
-      highlight(this);
+      PortugolEditorSupport.highlight(editor);
       editor
           .textProperty()
           .addListener(
               (obs, old, text) -> {
-                highlight(this);
+                PortugolEditorSupport.highlight(editor);
                 updateTitle();
                 refreshExplorer();
               });
@@ -138,7 +125,7 @@ public final class AlgoraApplication extends Application {
       editor.setOnKeyPressed(
           event -> {
             if (event.isControlDown() && event.getCode() == KeyCode.SPACE) {
-              showCompletions(this);
+              PortugolEditorSupport.showCompletions(editor, completions, running);
               event.consume();
             }
             if (event.getCode() == KeyCode.ESCAPE) completions.hide();
@@ -705,56 +692,6 @@ public final class AlgoraApplication extends Application {
     alert.setHeaderText(title);
     alert.initOwner(stage);
     alert.show();
-  }
-
-  private void highlight(Document d) {
-    String text = d.editor.getText();
-    var matcher = TOKENS.matcher(text);
-    StyleSpansBuilder<Collection<String>> spans = new StyleSpansBuilder<>();
-    int end = 0;
-    while (matcher.find()) {
-      spans.add(List.of(), matcher.start() - end);
-      String kind =
-          matcher.group("COMMENT") != null
-              ? "comment"
-              : matcher.group("STRING") != null
-                  ? "string"
-                  : matcher.group("NUMBER") != null ? "number" : "keyword";
-      spans.add(List.of(kind), matcher.end() - matcher.start());
-      end = matcher.end();
-    }
-    spans.add(List.of(), text.length() - end);
-    d.editor.setStyleSpans(0, spans.create());
-  }
-
-  private void showCompletions(Document d) {
-    if (running) return;
-    int caret = d.editor.getCaretPosition();
-    String before = d.editor.getText(0, caret);
-    int start = caret;
-    while (start > 0 && Character.isLetter(before.charAt(start - 1))) start--;
-    String prefix = before.substring(start).toLowerCase(Locale.ROOT);
-    final int from = start;
-    d.completions.getItems().clear();
-    for (String keyword : KEYWORDS)
-      if (keyword.startsWith(prefix)) {
-        MenuItem item = new MenuItem(keyword);
-        item.setOnAction(
-            e -> {
-              String text =
-                  switch (keyword) {
-                    case "se" -> "se condicao entao\n   \nfimse";
-                    case "para" -> "para i de 1 ate 10 faca\n   \nfimpara";
-                    case "enquanto" -> "enquanto condicao faca\n   \nfimenquanto";
-                    default -> keyword;
-                  };
-              d.editor.replaceText(from, caret, text);
-            });
-        d.completions.getItems().add(item);
-      }
-    d.editor
-        .getCaretBounds()
-        .ifPresent(bounds -> d.completions.show(d.editor, bounds.getMinX(), bounds.getMaxY() + 4));
   }
 
   private void toggleBreakpoint(Document d, int line) {
