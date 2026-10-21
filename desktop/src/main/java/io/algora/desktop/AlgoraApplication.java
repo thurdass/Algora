@@ -8,6 +8,7 @@ import io.algora.desktop.documents.EditorDocument;
 import io.algora.desktop.execution.ExecutionController;
 import io.algora.desktop.terminal.TerminalPane;
 import io.algora.desktop.ui.ApplicationHeader;
+import io.algora.desktop.ui.WorkspaceLayout;
 import java.io.IOException;
 import java.nio.charset.*;
 import java.nio.file.*;
@@ -15,7 +16,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -49,8 +49,7 @@ public final class AlgoraApplication extends Application {
   private Stage stage;
   private DocumentManager documentManager;
   private ExecutionController execution;
-  private VBox filesPanel, inspectionPanel;
-  private Button filesToggle, inspectionToggle;
+  private WorkspaceLayout workspace;
 
   public static void main(String[] args) {
     launch(args);
@@ -85,21 +84,21 @@ public final class AlgoraApplication extends Application {
             stage,
             documentManager,
             execution::isRunning,
-            () -> togglePanel(filesPanel),
-            () -> togglePanel(inspectionPanel),
+            () -> workspace.toggleFiles(),
+            () -> workspace.toggleInspector(),
             themeMenu());
     root.setTop(header.view());
-    filesToggle = header.filesToggle();
-    inspectionToggle = header.inspectionToggle();
-    filesPanel = documentManager.sidebar();
-    inspectionPanel = debuggerPane.view();
-    VBox editor = editorPane();
-    VBox rail = new VBox(8, filesToggle, inspectionToggle);
-    rail.getStyleClass().add("activity-rail");
-    HBox workspace = new HBox(rail, filesPanel, editor, inspectionPanel);
-    workspace.setId("workspace");
-    HBox.setHgrow(editor, Priority.ALWAYS);
-    root.setCenter(workspace);
+    workspace =
+        new WorkspaceLayout(
+            stage,
+            documentManager.tabs(),
+            execution.toolbar().view(),
+            terminalPane.view(),
+            documentManager.sidebar(),
+            debuggerPane.view(),
+            header.filesToggle(),
+            header.inspectionToggle());
+    root.setCenter(workspace.view());
     root.setBottom(statusbar());
     Scene scene = new Scene(root, 1360, 860);
     scene
@@ -139,24 +138,18 @@ public final class AlgoraApplication extends Application {
     stage.setTitle("Algora — seu próximo algoritmo");
     stage.setMinWidth(760);
     stage.setMinHeight(560);
-    stage
-        .widthProperty()
-        .addListener(
-            (o, old, width) -> {
-              showPanel(filesPanel, filesToggle, width.doubleValue() >= 900);
-              showPanel(inspectionPanel, inspectionToggle, width.doubleValue() >= 1160);
-            });
+    workspace.installResizeListener();
     scene
         .getAccelerators()
         .put(
             new KeyCodeCombination(KeyCode.B, KeyCombination.CONTROL_DOWN),
-            () -> togglePanel(filesPanel));
+            () -> workspace.toggleFiles());
     scene
         .getAccelerators()
         .put(
             new KeyCodeCombination(
                 KeyCode.D, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN),
-            () -> togglePanel(inspectionPanel));
+            () -> workspace.toggleInspector());
     stage.setOnCloseRequest(
         event -> {
           for (EditorDocument d : new ArrayList<>(documentManager.all()))
@@ -190,39 +183,6 @@ public final class AlgoraApplication extends Application {
       themes.getItems().add(item);
     }
     return themes;
-  }
-
-  private void showPanel(VBox panel, Button toggle, boolean visible) {
-    panel.setVisible(visible);
-    panel.setManaged(visible);
-    toggle.pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("selected"), visible);
-  }
-
-  private void togglePanel(VBox panel) {
-    boolean visible = !panel.isVisible();
-    if (visible && stage.getWidth() < 1100) {
-      VBox other = panel == filesPanel ? inspectionPanel : filesPanel;
-      showPanel(other, other == filesPanel ? filesToggle : inspectionToggle, false);
-    }
-    showPanel(panel, panel == filesPanel ? filesToggle : inspectionToggle, visible);
-  }
-
-  private VBox editorPane() {
-    documentManager.tabs().setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
-    documentManager.tabs().getStyleClass().add("editor-tabs");
-    VBox.setVgrow(documentManager.tabs(), Priority.ALWAYS);
-    VBox top = new VBox(execution.toolbar().view(), documentManager.tabs());
-    VBox.setVgrow(documentManager.tabs(), Priority.ALWAYS);
-    SplitPane split = new SplitPane(top, terminalPane.view());
-    split.setOrientation(Orientation.VERTICAL);
-    split.setDividerPositions(.73);
-    split.setId("editorSplit");
-    split.getStyleClass().add("editor-split");
-    VBox.setVgrow(split, Priority.ALWAYS);
-    VBox box = new VBox(split);
-    box.setMinWidth(360);
-    box.setId("editorPane");
-    return box;
   }
 
   private HBox statusbar() {
