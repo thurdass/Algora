@@ -1,6 +1,7 @@
 package io.algora.desktop;
 
 import io.algora.desktop.editor.PortugolEditorSupport;
+import io.algora.desktop.terminal.TerminalPane;
 import io.algora.interpreter.AlgoraEngine;
 import io.algora.interpreter.DebugSession;
 import io.algora.interpreter.Snapshot;
@@ -48,17 +49,14 @@ public final class AlgoraApplication extends Application {
           + "      escreval(\"Sua próxima ideia começa aqui. Passo \", contador)\n"
           + "   fimpara\n"
           + "fimalgoritmo\n";
+  private final TerminalPane terminalPane = new TerminalPane();
   private final TabPane tabs = new TabPane();
   private final ListView<Document> explorer = new ListView<>();
   private final Map<Tab, Document> documents = new LinkedHashMap<>();
-  private final TextArea terminal = new TextArea();
-  private final TextField input = new TextField();
   private final VBox variables = new VBox(7);
   private final VBox breakpointList = new VBox(6);
-  private final Label runStatus = new Label("Pronto");
   private final Label position = new Label("Ln 1, Col 1");
   private final Label status = new Label("Pronto");
-  private final BlockingQueue<String> inputs = new LinkedBlockingQueue<>();
   private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
   private DebugSession session;
   private volatile boolean running;
@@ -67,8 +65,6 @@ public final class AlgoraApplication extends Application {
   private Stage stage;
   private final AtomicReference<Snapshot> latestSnapshot = new AtomicReference<>();
   private final AtomicBoolean snapshotScheduled = new AtomicBoolean();
-  private final StringBuilder outputBuffer = new StringBuilder();
-  private final AtomicBoolean outputScheduled = new AtomicBoolean();
   private Button execute, debug, pause, step, stop;
   private int nextFile = 1;
   private VBox filesPanel, inspectionPanel;
@@ -474,42 +470,7 @@ public final class AlgoraApplication extends Application {
     toolbar.getStyleClass().add("editor-toolbar");
     VBox top = new VBox(toolbar, tabs);
     VBox.setVgrow(tabs, Priority.ALWAYS);
-    runStatus.setId("executionStatus");
-    terminal.setId("terminalOutput");
-    terminal.setEditable(false);
-    terminal.setWrapText(true);
-    terminal.getStyleClass().add("terminal-output");
-    terminal.setText("A saída do algoritmo aparece aqui.\nPressione F5 para executar.\n");
-    VBox.setVgrow(terminal, Priority.ALWAYS);
-    input.setId("terminalInput");
-    input.setPromptText("Digite um valor e pressione Enter");
-    input.setDisable(true);
-    input.visibleProperty().bind(input.disabledProperty().not());
-    input.managedProperty().bind(input.visibleProperty());
-    input.getStyleClass().add("terminal-input");
-    input.setOnAction(
-        e -> {
-          if (!input.isDisabled()) {
-            String text = input.getText();
-            appendTerminal(text + "\n");
-            input.clear();
-            input.setDisable(true);
-            inputs.offer(text);
-          }
-        });
-    Label label = new Label("Terminal");
-    label.setGraphic(Icons.create("terminal"));
-    label.setGraphicTextGap(8);
-    label.getStyleClass().add("terminal-label");
-    Region flex = new Region();
-    HBox.setHgrow(flex, Priority.ALWAYS);
-    Button clear = iconButton("close", "Limpar terminal", () -> terminal.clear());
-    HBox terminalHead = new HBox(10, label, flex, runStatus, clear);
-    terminalHead.getStyleClass().add("terminal-heading");
-    VBox lower = new VBox(terminalHead, terminal, input);
-    lower.setMinHeight(150);
-    lower.getStyleClass().add("terminal-panel");
-    SplitPane split = new SplitPane(top, lower);
+    SplitPane split = new SplitPane(top, terminalPane.view());
     split.setOrientation(Orientation.VERTICAL);
     split.setDividerPositions(.73);
     split.setId("editorSplit");
@@ -744,11 +705,11 @@ public final class AlgoraApplication extends Application {
     Document d = active();
     if (d == null) return;
     executionDocument = d;
-    inputs.clear();
-    terminal.clear();
+    terminalPane.clearInputs();
+    terminalPane.output().clear();
     variables.getChildren().clear();
     setRunning(true);
-    appendTerminal("Executando " + d.name() + "\n\n");
+    terminalPane.append("Executando " + d.name() + "\n\n");
     String source = d.editor.getText();
     executor.submit(
         () -> {
@@ -759,13 +720,13 @@ public final class AlgoraApplication extends Application {
                     () -> {
                       Platform.runLater(
                           () -> {
-                            runStatus.setText("Aguardando entrada");
-                            input.setDisable(false);
-                            input.requestFocus();
+                            terminalPane.statusLabel().setText("Aguardando entrada");
+                            terminalPane.input().setDisable(false);
+                            terminalPane.input().requestFocus();
                           });
-                      return inputs.take();
+                      return terminalPane.takeInput();
                     },
-                    this::appendOutput,
+                    terminalPane::appendOutput,
                     this::scheduleSnapshot);
             session.setBreakpoints(Set.copyOf(d.breakpoints));
             session
@@ -775,12 +736,12 @@ public final class AlgoraApplication extends Application {
                         Platform.runLater(
                             () -> {
                               if (exception != null) {
-                                appendTerminal(
+                                terminalPane.append(
                                     "\nErro: " + rootCause(exception).getMessage() + "\n");
                                 status.setText("Erro na execução");
-                                runStatus.setText("Erro");
+                                terminalPane.statusLabel().setText("Erro");
                               } else
-                                appendTerminal(
+                                terminalPane.append(
                                     "\n\n"
                                         + (result.status().name().equals("STOPPED")
                                             ? "Execução interrompida."
@@ -791,7 +752,7 @@ public final class AlgoraApplication extends Application {
                                     result.status().name().equals("STOPPED")
                                         ? "Interrompido"
                                         : "Finalizado";
-                                runStatus.setText(finalStatus);
+                                terminalPane.statusLabel().setText(finalStatus);
                                 status.setText(finalStatus);
                               }
                               setRunning(false);
@@ -799,40 +760,13 @@ public final class AlgoraApplication extends Application {
           } catch (Throwable exception) {
             Platform.runLater(
                 () -> {
-                  appendTerminal("Erro: " + exception.getMessage() + "\n");
+                  terminalPane.append("Erro: " + exception.getMessage() + "\n");
                   status.setText("Erro no algoritmo");
-                  runStatus.setText("Erro");
+                  terminalPane.statusLabel().setText("Erro");
                   setRunning(false);
                 });
           }
         });
-  }
-
-  private void appendTerminal(String text) {
-    terminal.appendText(text);
-    terminal.positionCaret(terminal.getLength());
-    terminal.setScrollTop(Double.MAX_VALUE);
-  }
-
-  private void appendOutput(String text) {
-    synchronized (outputBuffer) {
-      outputBuffer.append(text);
-    }
-    if (outputScheduled.compareAndSet(false, true))
-      Platform.runLater(
-          () -> {
-            String pending;
-            synchronized (outputBuffer) {
-              pending = outputBuffer.toString();
-              outputBuffer.setLength(0);
-              outputScheduled.set(false);
-            }
-            if (pending.contains("\u001b[2J")) {
-              terminal.clear();
-              pending = pending.substring(pending.lastIndexOf("\u001b[2J") + 4);
-            }
-            appendTerminal(pending.replaceAll("\\x1b\\[[0-9;]*[A-Za-z]", ""));
-          });
   }
 
   private void scheduleSnapshot(Snapshot snapshot) {
@@ -854,18 +788,20 @@ public final class AlgoraApplication extends Application {
   private void updateSnapshot(Snapshot snapshot) {
     String state = snapshot.status().name();
     boolean paused = state.equals("PAUSED");
-    runStatus.setText(
-        paused
-            ? "Pausado na linha " + snapshot.line()
-            : ""
-                + switch (state) {
-                  case "RUNNING" -> "Em execução";
-                  case "COMPLETED" -> "Finalizado";
-                  case "ERROR" -> "Erro";
-                  case "STOPPED" -> "Interrompido";
-                  default -> "Pronto";
-                });
-    status.setText(runStatus.getText());
+    terminalPane
+        .statusLabel()
+        .setText(
+            paused
+                ? "Pausado na linha " + snapshot.line()
+                : ""
+                    + switch (state) {
+                      case "RUNNING" -> "Em execução";
+                      case "COMPLETED" -> "Finalizado";
+                      case "ERROR" -> "Erro";
+                      case "STOPPED" -> "Interrompido";
+                      default -> "Pronto";
+                    });
+    status.setText(terminalPane.statusLabel().getText());
     execute.setText(paused ? "Continuar   F5" : "Executar   F5");
     variables.getChildren().clear();
     snapshot
@@ -907,7 +843,7 @@ public final class AlgoraApplication extends Application {
   private void setRunning(boolean value) {
     running = value;
     if (value) {
-      runStatus.setText("Em execução");
+      terminalPane.statusLabel().setText("Em execução");
       status.setText("Em execução");
     }
     for (Document d : documents.values()) d.editor.setEditable(!value);
@@ -916,7 +852,7 @@ public final class AlgoraApplication extends Application {
     step.setDisable(!value);
     stop.setDisable(!value);
     if (!value) {
-      input.setDisable(true);
+      terminalPane.input().setDisable(true);
       if (executionDocument != null) {
         executionDocument.executionLine = 0;
         refreshGutter(executionDocument);
@@ -926,7 +862,7 @@ public final class AlgoraApplication extends Application {
 
   private void stopExecution() {
     if (session != null) session.stop();
-    input.setDisable(true);
+    terminalPane.input().setDisable(true);
   }
 
   /** Exercise the installed runtime without requiring an external JDK or test framework. */
@@ -947,19 +883,19 @@ public final class AlgoraApplication extends Application {
             new javafx.animation.KeyFrame(
                 javafx.util.Duration.millis(80),
                 event -> {
-                  if (!input.isDisabled()) {
-                    input.setText("Java 21");
-                    input.fireEvent(new javafx.event.ActionEvent());
+                  if (!terminalPane.input().isDisabled()) {
+                    terminalPane.input().setText("Java 21");
+                    terminalPane.input().fireEvent(new javafx.event.ActionEvent());
                   }
-                  if (terminal.getText().contains("Erro:")) {
-                    System.err.println("ALGORA_SMOKE_FAILED: " + terminal.getText());
+                  if (terminalPane.output().getText().contains("Erro:")) {
+                    System.err.println("ALGORA_SMOKE_FAILED: " + terminalPane.output().getText());
                     stop();
                     Platform.exit();
                     System.exit(1);
                   }
-                  if (terminal.getText().contains("Execução finalizada")) {
-                    if (!terminal.getText().contains("Bem-vindo ao Algora, Java 21!")
-                        || !terminal.getText().contains("Passo 3")) {
+                  if (terminalPane.output().getText().contains("Execução finalizada")) {
+                    if (!terminalPane.output().getText().contains("Bem-vindo ao Algora, Java 21!")
+                        || !terminalPane.output().getText().contains("Passo 3")) {
                       System.err.println("ALGORA_SMOKE_FAILED: unexpected output");
                       System.exit(1);
                     }

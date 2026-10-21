@@ -6,10 +6,10 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 
 /** Small code-native icons with the same geometry on Linux and Windows. */
-final class Icons {
+public final class Icons {
   private Icons() {}
 
-  static Pane create(String name) {
+  public static Pane create(String name) {
     String data =
         switch (name) {
           case "play" -> "M5 3 L14 9 L5 15 Z";
