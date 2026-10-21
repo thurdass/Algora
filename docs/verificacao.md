@@ -49,3 +49,7 @@ O workflow [39521317453](https://github.com/thurdass/Algora/actions/runs/3952131
 ### Release atualizada com a logo
 
 A release `v0.2.0` foi atualizada com os artefatos da revisão `9d0c9dd`, produzidos pelo [workflow 39522744399](https://github.com/thurdass/Algora/actions/runs/39522744399). Linux e Windows passaram na suíte e na execução do aplicativo empacotado. Os novos instaladores incluem a logo no cabeçalho e acompanham hashes SHA-256 renovados.
+
+### Ícones nativos do aplicativo
+
+A revisão `78168a8` configura o emblema oficial no `jpackage` e na janela JavaFX. O [workflow 39528828461](https://github.com/thurdass/Algora/actions/runs/39528828461) passou em Linux e Windows, incluindo build, 23 testes e execução empacotada. No Linux, o PNG da aplicação e o PNG extraído do `.deb` foram comparados ao recurso original e são idênticos; o arquivo `.desktop` aponta para esse ícone. O ICO Windows contém resoluções de 16 a 256 pixels. Os instaladores atualizados substituem os da release `v0.2.0` e recebem novos hashes SHA-256.
