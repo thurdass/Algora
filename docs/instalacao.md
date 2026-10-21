@@ -38,3 +38,9 @@ A aplicação fica em `desktop/build/jpackage/image/Algora/`; no Linux, o execut
 ## Verificação dos pacotes
 
 O build, os testes JavaFX e a execução da aplicação nativa com runtime incluído passaram em Linux e Windows. Consulte o [registro de verificação](verificacao.md) para o commit validado, resultados e limites desses testes.
+
+## Ícone do aplicativo
+
+Os builds usam o emblema da logo oficial: PNG no Linux e ICO com múltiplas resoluções no Windows. O `jpackage` recebe o ícone tanto na aplicação quanto no instalador; a janela JavaFX também carrega o PNG. Os recursos ficam em `desktop/src/main/resources/io/algora/desktop/icons/`.
+
+Se você instalou um pacote anterior com o ícone padrão do Java, baixe o instalador atualizado da release e reinstale o aplicativo. Atalhos antigos criados manualmente podem precisar ser recriados; o ambiente desktop também pode manter o ícone antigo em cache até uma nova sessão.

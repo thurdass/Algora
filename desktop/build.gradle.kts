@@ -21,6 +21,9 @@ val packageInput = tasks.register<Sync>("preparePackageInput") {
 val jpackageExecutable = javaToolchains.launcherFor {
     languageVersion.set(JavaLanguageVersion.of(21))
 }.map { it.metadata.installationPath.file("bin/jpackage${if (hostOs.isWindows) ".exe" else ""}").asFile.absolutePath }
+val applicationIcon = layout.projectDirectory.file(
+    "src/main/resources/io/algora/desktop/icons/algora.${if (hostOs.isWindows) "ico" else "png"}"
+)
 val appImageDirectory = layout.buildDirectory.dir("jpackage/image")
 val appImage = tasks.register<Exec>("jpackageAppImage") {
     group = "distribution"
@@ -33,6 +36,7 @@ val appImage = tasks.register<Exec>("jpackageAppImage") {
             "--name", "Algora", "--app-version", project.version.toString(), "--vendor", "Algora",
             "--description", "IDE de Portugol com interpretador independente",
             "--main-jar", tasks.jar.get().archiveFileName.get(), "--main-class", application.mainClass.get(),
+            "--icon", applicationIcon.asFile.absolutePath,
             "--java-options", "-Dfile.encoding=UTF-8",
             "--add-modules", "java.base,java.desktop,java.logging,java.prefs,java.xml,jdk.unsupported,java.net.http")
     }
@@ -46,7 +50,7 @@ tasks.register<Exec>("jpackageInstaller") {
         delete(output)
         val args = mutableListOf(jpackageExecutable.get(), "--type", if(hostOs.isWindows) "exe" else if(hostOs.isMacOsX) "dmg" else "deb",
             "--dest", output.absolutePath, "--name", "Algora", "--app-version", project.version.toString(),
-            "--vendor", "Algora", "--app-image", appImageDirectory.get().dir("Algora").asFile.absolutePath)
+            "--vendor", "Algora", "--icon", applicationIcon.asFile.absolutePath, "--app-image", appImageDirectory.get().dir("Algora").asFile.absolutePath)
         if(hostOs.isWindows) args += listOf("--win-menu", "--win-shortcut", "--win-dir-chooser", "--win-per-user-install")
         if(hostOs.isLinux) args += listOf("--linux-menu-group", "Development", "--linux-shortcut", "--linux-package-name", "algora", "--linux-deb-maintainer", "thurdass@users.noreply.github.com")
         commandLine(args)

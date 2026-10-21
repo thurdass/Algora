@@ -14,6 +14,7 @@ import java.nio.file.*;
 import java.util.*;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -130,6 +131,11 @@ public final class AlgoraApplication extends Application {
             () -> {
               execution.step();
             });
+    stage
+        .getIcons()
+        .add(
+            new Image(
+                Objects.requireNonNull(getClass().getResource("icons/algora.png")).toExternalForm()));
     stage.setScene(scene);
     applyTheme(EditorTheme.saved());
     stage.setTitle("Algora — seu próximo algoritmo");
