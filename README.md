@@ -59,7 +59,7 @@ Também é possível marcar pontos de parada na margem esquerda do editor. Os co
 ## Organização
 
 - `interpreter`: gramática ANTLR4, AST, execução e API de depuração, sem dependência gráfica.
-- `desktop`: aplicação JavaFX 21 e editor RichTextFX.
+- `desktop`: aplicação JavaFX 21 e editor RichTextFX, organizados em documentos, editor, terminal, depuração, execução e componentes visuais. Veja o [relatório da refatoração estrutural](docs/refatoracao-estrutural.md).
 - `cli`: execução de algoritmos no terminal usando o mesmo interpretador.
 - `examples`: programas originais para experimentar.
 - `docs`: arquitetura, API, compatibilidade e evidências da investigação.
