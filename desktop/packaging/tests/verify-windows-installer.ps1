@@ -13,11 +13,16 @@ if (!$install.WaitForExit(120000)) {
     throw "Installer timed out; see $log"
 }
 if ($install.ExitCode -notin @(0, 3010)) { throw "Installer exit code $($install.ExitCode); see $log" }
-$registration = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' |
-    Where-Object { $_.DisplayName -eq 'Algora' } | Select-Object -First 1
-if (!$registration) { throw 'Per-user installation was not registered' }
+# Query Windows Installer rather than assuming the location/view of ARP registry keys.
+$match = [regex]::Match((Get-Content $log -Raw), 'Property\(S\): ProductCode = (\{[0-9A-Fa-f-]+\})')
+if (!$match.Success) { throw 'MSI product code missing from installation log' }
+$productCode = $match.Groups[1].Value
+$msi = New-Object -ComObject WindowsInstaller.Installer
+$state = $msi.GetType().InvokeMember('ProductState', [Reflection.BindingFlags]::GetProperty, $null, $msi, @($productCode))
+if ($state -ne 5) { throw "Windows Installer product state is $state instead of installed" }
+$location = $msi.GetType().InvokeMember('ProductInfo', [Reflection.BindingFlags]::GetProperty, $null, $msi, @($productCode, 'InstallLocation'))
 try {
-    $executable = Join-Path $registration.InstallLocation 'Algora.exe'
+    $executable = Join-Path $location 'Algora.exe'
     if (!(Test-Path $executable)) { throw "Installed launcher missing: $executable" }
     $shell = New-Object -ComObject WScript.Shell
     $shortcuts = @(Get-ChildItem ([Environment]::GetFolderPath('Desktop')) -Filter '*Algora*.lnk') +
@@ -36,7 +41,7 @@ try {
     Write-Output 'ALGORA_WINDOWS_INSTALL_OK'
 } finally {
     $uninstallLog = Join-Path $reports 'uninstall.log'
-    $remove = Start-Process msiexec.exe -ArgumentList @('/x', $registration.PSChildName, '/qn', '/norestart', '/L*v', "`"$uninstallLog`"") -Wait -PassThru
+    $remove = Start-Process msiexec.exe -ArgumentList @('/x', $productCode, '/qn', '/norestart', '/L*v', "`"$uninstallLog`"") -Wait -PassThru
     if ($remove.ExitCode -notin @(0, 3010)) { throw "Uninstall exit code $($remove.ExitCode); see $uninstallLog" }
     Write-Output 'ALGORA_WINDOWS_UNINSTALL_OK'
 }
