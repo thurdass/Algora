@@ -2,6 +2,7 @@ package io.algora.desktop;
 
 import static io.algora.desktop.ui.IdeControls.*;
 
+import io.algora.desktop.debug.DebuggerPane;
 import io.algora.desktop.documents.DocumentManager;
 import io.algora.desktop.documents.EditorDocument;
 import io.algora.desktop.terminal.TerminalPane;
@@ -49,8 +50,7 @@ public final class AlgoraApplication extends Application {
           + "   fimpara\n"
           + "fimalgoritmo\n";
   private final TerminalPane terminalPane = new TerminalPane();
-  private final VBox variables = new VBox(7);
-  private final VBox breakpointList = new VBox(6);
+  private final DebuggerPane debuggerPane = new DebuggerPane();
   private final Label position = new Label("Ln 1, Col 1");
   private final Label status = new Label("Pronto");
   private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -80,7 +80,7 @@ public final class AlgoraApplication extends Application {
             () -> running,
             this::toggleBreakpoint,
             () -> executionDocument,
-            this::refreshBreakpoints);
+            () -> debuggerPane.refreshBreakpoints(documentManager.active()));
     for (String file :
         List.of("IBMPlexSans-Regular.ttf", "IBMPlexSans-Medium.ttf", "IBMPlexMono-Regular.ttf")) {
       try (var stream = getClass().getResourceAsStream("fonts/" + file)) {
@@ -94,7 +94,7 @@ public final class AlgoraApplication extends Application {
     root.getStyleClass().add("root-shell");
     root.setTop(header());
     filesPanel = documentManager.sidebar();
-    inspectionPanel = inspector();
+    inspectionPanel = debuggerPane.view();
     VBox editor = editorPane();
     VBox rail = new VBox(8, filesToggle, inspectionToggle);
     rail.getStyleClass().add("activity-rail");
@@ -329,28 +329,6 @@ public final class AlgoraApplication extends Application {
     return box;
   }
 
-  private VBox inspector() {
-    VBox box = new VBox();
-    box.setId("inspectionPanel");
-    box.getStyleClass().add("inspector");
-    box.setPrefWidth(240);
-    box.setMinWidth(215);
-    box.setMaxWidth(240);
-    Label title = heading("Depuração");
-    HBox top = new HBox(title);
-    top.getStyleClass().add("panel-heading");
-    Label vars = heading("Variáveis");
-    vars.getStyleClass().add("section-heading");
-    variables.setId("variablesTable");
-    variables.getStyleClass().add("variables");
-    emptyVariables();
-    Label points = heading("Pontos de parada");
-    points.getStyleClass().add("section-heading");
-    breakpointList.getStyleClass().add("breakpoints");
-    box.getChildren().addAll(top, vars, variables, points, breakpointList);
-    return box;
-  }
-
   private HBox statusbar() {
     Region space = new Region();
     HBox.setHgrow(space, Priority.ALWAYS);
@@ -371,42 +349,8 @@ public final class AlgoraApplication extends Application {
     if (!d.breakpoints.add(line)) d.breakpoints.remove(line);
     if (session != null && executionDocument == d)
       session.setBreakpoints(Set.copyOf(d.breakpoints));
-    refreshGutter(d);
-    refreshBreakpoints();
-  }
-
-  private void refreshGutter(EditorDocument d) {
-    for (int i = 0; i < d.editor.getParagraphs().size(); i++) d.editor.recreateParagraphGraphic(i);
-  }
-
-  private void refreshBreakpoints() {
-    breakpointList.getChildren().clear();
-    EditorDocument d = documentManager.active();
-    if (d == null || d.breakpoints.isEmpty()) {
-      Label hint = new Label("Nenhum ponto de parada.\nUse a margem do editor ou F9.");
-      hint.setWrapText(true);
-      hint.getStyleClass().add("hint");
-      breakpointList.getChildren().add(hint);
-      return;
-    }
-    for (int line : d.breakpoints) {
-      Button b =
-          button(
-              "●  " + d.name() + " :" + line,
-              "Ir para ponto de parada",
-              () -> {
-                d.editor.moveTo(Math.min(line - 1, d.editor.getParagraphs().size() - 1), 0);
-                d.editor.requestFollowCaret();
-              });
-      b.getStyleClass().add("breakpoint-item");
-      breakpointList.getChildren().add(b);
-    }
-  }
-
-  private void emptyVariables() {
-    Label empty = new Label("Execute ou depure para\ninspecionar as variáveis.");
-    empty.getStyleClass().add("empty-state");
-    variables.getChildren().setAll(empty);
+    debuggerPane.refreshGutter(d);
+    debuggerPane.refreshBreakpoints(documentManager.active());
   }
 
   private void run(boolean debugMode) {
@@ -419,7 +363,7 @@ public final class AlgoraApplication extends Application {
     executionDocument = d;
     terminalPane.clearInputs();
     terminalPane.output().clear();
-    variables.getChildren().clear();
+    debuggerPane.clearVariables();
     setRunning(true);
     terminalPane.append("Executando " + d.name() + "\n\n");
     String source = d.editor.getText();
@@ -515,25 +459,10 @@ public final class AlgoraApplication extends Application {
                     });
     status.setText(terminalPane.statusLabel().getText());
     execute.setText(paused ? "Continuar   F5" : "Executar   F5");
-    variables.getChildren().clear();
-    snapshot
-        .variables()
-        .forEach(
-            (name, value) -> {
-              Label key = new Label(name);
-              key.getStyleClass().add("variable-name");
-              Label val = new Label(format(value));
-              val.getStyleClass().add("variable-value");
-              val.setMaxWidth(125);
-              val.setTooltip(new Tooltip(format(value)));
-              Region spacer = new Region();
-              HBox.setHgrow(spacer, Priority.ALWAYS);
-              variables.getChildren().add(new HBox(5, key, spacer, val));
-            });
-    if (snapshot.variables().isEmpty()) emptyVariables();
+    debuggerPane.updateVariables(snapshot.variables());
     if (executionDocument != null) {
       executionDocument.executionLine = paused ? snapshot.line() : 0;
-      refreshGutter(executionDocument);
+      debuggerPane.refreshGutter(executionDocument);
       if (paused) {
         int line =
             Math.max(
@@ -543,13 +472,6 @@ public final class AlgoraApplication extends Application {
         executionDocument.editor.requestFollowCaret();
       }
     }
-  }
-
-  private String format(Object value) {
-    if (value instanceof String s) return '"' + s + '"';
-    if (value instanceof Map<?, ?> map) return map.toString();
-    if (value instanceof Object[] array) return Arrays.deepToString(array);
-    return String.valueOf(value);
   }
 
   private void setRunning(boolean value) {
@@ -567,7 +489,7 @@ public final class AlgoraApplication extends Application {
       terminalPane.input().setDisable(true);
       if (executionDocument != null) {
         executionDocument.executionLine = 0;
-        refreshGutter(executionDocument);
+        debuggerPane.refreshGutter(executionDocument);
       }
     }
   }
