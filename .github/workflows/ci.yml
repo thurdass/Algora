@@ -50,9 +50,15 @@ jobs:
           sudo apt-get install -y x11-utils
           xvfb-run -a python3 desktop/packaging/tests/verify-linux-desktop.py
       - name: Install, launch and uninstall Windows package
+        timeout-minutes: 5
         if: runner.os == 'Windows'
         shell: pwsh
-        run: ./desktop/packaging/tests/verify-windows-installer.ps1
+        run: |
+          foreach ($installer in Get-ChildItem desktop/build/jpackage/installer/* | Where-Object Extension -in '.exe', '.msi') {
+            powershell.exe -NoProfile -File ./desktop/packaging/tests/verify-windows-installer-ui.ps1 -InstallerPath $installer.FullName
+            if ($LASTEXITCODE -ne 0) { throw "Installer UI test failed: $($installer.Name)" }
+            ./desktop/packaging/tests/verify-windows-installer.ps1 -InstallerPath $installer.FullName
+          }
       - uses: actions/upload-artifact@v4
         if: always() && runner.os == 'Windows'
         with:

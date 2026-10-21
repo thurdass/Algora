@@ -67,3 +67,22 @@ tasks.register<Exec>("jpackageSmokeTest") {
         commandLine(executable.absolutePath, "--smoke-test")
     }
 }
+
+val windowsMsiInstaller = tasks.register<Exec>("jpackageWindowsMsi") {
+    group = "distribution"
+    description = "Create the direct Windows Installer package"
+    dependsOn(appImage)
+    onlyIf { hostOs.isWindows }
+    doFirst {
+        val output = layout.buildDirectory.dir("jpackage/installer").get().asFile
+        output.mkdirs()
+        commandLine(jpackageExecutable.get(), "--type", "msi",
+            "--dest", output.absolutePath, "--name", "Algora", "--app-version", project.version.toString(),
+            "--vendor", "Algora", "--icon", applicationIcon.asFile.absolutePath,
+            "--app-image", appImageDirectory.get().dir("Algora").asFile.absolutePath,
+            "--win-menu", "--win-shortcut", "--win-dir-chooser", "--win-per-user-install")
+    }
+}
+if (hostOs.isWindows) {
+    tasks.named("jpackageInstaller") { finalizedBy(windowsMsiInstaller) }
+}

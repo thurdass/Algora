@@ -31,7 +31,7 @@ O desktop requer sessão gráfica e as bibliotecas nativas necessárias ao JavaF
 
 O primeiro comando usa o tipo `app-image` do `jpackage`: uma pasta executável com runtime Java incluído. Esse nome não designa o formato de arquivo `.AppImage` do Linux. O segundo gera um instalador nativo para o sistema do build. Não há compilação cruzada de instaladores pelo `jpackage`: gere Linux em Linux e Windows em Windows.
 
-A tarefa Linux gera `.deb` e requer `dpkg-deb` e `fakeroot`. A tarefa Windows gera `.exe` e requer WiX compatível com o JDK 21. Os pacotes precisam ser testados em cada sistema; a compilação Java por si só não verifica diálogos nativos, fontes, atalhos ou instalação.
+A tarefa Linux gera `.deb` e requer `dpkg-deb` e `fakeroot`. A tarefa Windows gera `.exe` e `.msi` e requer WiX compatível com o JDK 21. O `.msi` é a opção recomendada para abrir diretamente o Windows Installer, sem a extração intermediária do `.exe`. Os pacotes precisam ser testados em cada sistema; a compilação Java por si só não verifica diálogos nativos, fontes, atalhos ou instalação.
 
 A aplicação fica em `desktop/build/jpackage/image/Algora/`; no Linux, o executável é `desktop/build/jpackage/image/Algora/bin/Algora`. Instaladores ficam em `desktop/build/jpackage/installer/`. A distribuição inclui runtime; o usuário final não precisa instalar um JDK separadamente.
 
@@ -57,4 +57,17 @@ Para gerar um log local de instalação pelo PowerShell, no diretório do downlo
 
 ```powershell
 .\Algora-0.2.0.exe /L*v "$env:TEMP\algora-install.log"
+```
+
+
+### Instalador Windows em execução sem janela
+
+Se o `.exe` baixado ficar em execução sem mostrar a tela de instalação, use o pacote direto `Algora-0.2.0.msi` da mesma release. Esse formato evita o executável que extrai um MSI temporário e chama o Windows Installer. Se já houver uma instalação anterior de v0.2.0, remova-a em **Configurações → Aplicativos → Algora** antes de reinstalar um pacote revisado da mesma versão.
+
+O CI verifica a aparição do assistente visível dos dois formatos, cancela esse assistente e executa separadamente a instalação silenciosa, abertura do aplicativo e desinstalação. Capturas das telas, registros dos controles e logs MSI são mantidos no artefato `Windows-installer-diagnostics`.
+
+Para registrar uma falha na abertura do MSI pelo PowerShell:
+
+```powershell
+msiexec.exe /i "$PWD\Algora-0.2.0.msi" /L*v "$env:TEMP\algora-msi.log"
 ```

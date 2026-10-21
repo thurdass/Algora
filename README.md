@@ -29,7 +29,7 @@ A interface utiliza fontes IBM Plex locais, painéis recolhíveis e composição
 
 Baixe os instaladores na [release v0.2.0](https://github.com/thurdass/Algora/releases/tag/v0.2.0):
 
-- **Windows x64:** execute `Algora-0.2.0.exe` e siga o instalador.
+- **Windows x64:** prefira `Algora-0.2.0.msi`, que abre diretamente no Windows Installer. O instalador `Algora-0.2.0.exe` também está disponível.
 - **Linux x64 (Debian/Ubuntu):** baixe `algora_0.2.0_amd64.deb` e execute `sudo apt install ./algora_0.2.0_amd64.deb`.
 
 Os instaladores incluem o runtime Java; não é necessário instalar um JDK para usar a IDE. O arquivo `SHA256SUMS.txt` permite conferir a integridade dos downloads. O pacote Linux é destinado a distribuições compatíveis com `.deb`.

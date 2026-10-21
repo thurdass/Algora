@@ -1,13 +1,23 @@
 # Exercise the EXE wrapper and the installed application, retaining MSI diagnostics.
+param([string]$InstallerPath)
+
 $ErrorActionPreference = 'Stop'
 $desktop = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$installer = Get-ChildItem (Join-Path $desktop 'build/jpackage/installer/*.exe') | Select-Object -First 1
+$installer = if ($InstallerPath) { Get-Item $InstallerPath } else {
+    Get-ChildItem (Join-Path $desktop 'build/jpackage/installer/*.exe') | Select-Object -First 1
+}
 if (!$installer) { throw 'Windows installer not found' }
 $reports = Join-Path $desktop 'build/reports/installer'
 New-Item -ItemType Directory -Force -Path $reports | Out-Null
-$log = Join-Path $reports 'install.log'
+$kind = $installer.Extension.TrimStart('.')
+$log = Join-Path $reports "$kind-install.log"
 # jpackage's EXE forwards these arguments to msiexec.
-$install = Start-Process -FilePath $installer.FullName -ArgumentList @('/qn', '/norestart', '/L*v', "`"$log`"") -PassThru
+$arguments = @('/qn', '/norestart', '/L*v', "`"$log`"")
+if ($kind -eq 'msi') {
+    $install = Start-Process msiexec.exe -ArgumentList (@('/i', "`"$($installer.FullName)`"") + $arguments) -PassThru
+} else {
+    $install = Start-Process -FilePath $installer.FullName -ArgumentList $arguments -PassThru
+}
 if (!$install.WaitForExit(120000)) {
     Stop-Process -Id $install.Id -Force
     throw "Installer timed out; see $log"
@@ -40,7 +50,7 @@ try {
     if ($app.ExitCode -ne 0) { throw "Installed application exit code $($app.ExitCode)" }
     Write-Output 'ALGORA_WINDOWS_INSTALL_OK'
 } finally {
-    $uninstallLog = Join-Path $reports 'uninstall.log'
+    $uninstallLog = Join-Path $reports "$kind-uninstall.log"
     $remove = Start-Process msiexec.exe -ArgumentList @('/x', $productCode, '/qn', '/norestart', '/L*v', "`"$uninstallLog`"") -Wait -PassThru
     if ($remove.ExitCode -notin @(0, 3010)) { throw "Uninstall exit code $($remove.ExitCode); see $uninstallLog" }
     Write-Output 'ALGORA_WINDOWS_UNINSTALL_OK'
