@@ -61,3 +61,13 @@ A janela JavaFX foi inspecionada com `xprop`: `WM_CLASS` é `io.algora.desktop.A
 O [workflow 39530990646](https://github.com/thurdass/Algora/actions/runs/39530990646), revisão `65d6bcc`, aprovou os testes das duas plataformas. No Windows, o novo teste `verify-windows-installer.ps1` instalou o `.exe` silenciosamente, consultou o estado pelo Windows Installer, verificou os atalhos, executou o aplicativo instalado e o desinstalou. Os marcadores são `ALGORA_WINDOWS_INSTALL_OK` e `ALGORA_WINDOWS_UNINSTALL_OK`. A primeira versão desse teste falhou por presumir um caminho de Registro específico; os logs já indicavam instalação bem-sucedida, e a consulta foi corrigida para usar a API MSI.
 
 A falha Windows relatada pelo usuário não foi reproduzida nesse ambiente; sua mensagem e etapa ainda são necessárias para diagnóstico específico. O teste silencioso não cobre os diálogos interativos, SmartScreen ou políticas de outra máquina. Os instaladores e hashes da release `v0.2.0` foram atualizados para esta revisão.
+
+### Assistente visível e MSI Windows direto
+
+O relato foi esclarecido: no Windows 11, o instalador `.exe` baixado permanecia em execução sem mostrar a tela. A distribuição passou a incluir também `Algora-0.2.0.msi`, recomendado para abrir diretamente o Windows Installer, sem a extração intermediária feita pelo `.exe`. Não houve alteração no código Java ou nas regras da linguagem.
+
+O [workflow 39535004943](https://github.com/thurdass/Algora/actions/runs/39535004943), revisão `8875281`, passou em Linux e Windows. Além dos 23 testes e da execução empacotada, o Windows confirmou, para `.exe` e `.msi`: assistente nativo visível com controles de navegação e dimensões válidas; captura da janela; cancelamento; instalação silenciosa; atalhos; execução da aplicação instalada; e desinstalação. Os logs e capturas estão no artefato `Windows-installer-diagnostics`.
+
+A automação inicial via UI Automation não detectava corretamente as janelas MSI; a verificação passou a usar janelas e controles Win32. O encerramento precisou acionar o botão Cancel, em vez de depender apenas de WM_CLOSE. Essas falhas foram do teste, não demonstraram defeito nos instaladores. As capturas finais mostram os dois assistentes; a falha específica da máquina Windows 11 do usuário não foi reproduzida no runner Windows Server 2025. O MSI direto fornece uma alternativa que evita o executável intermediário, sem atribuir uma causa não confirmada ao ambiente do usuário.
+
+![Assistente MSI capturado no Windows do CI](assets/algora-installer-windows.png)
