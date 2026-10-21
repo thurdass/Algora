@@ -5,18 +5,13 @@ import static io.algora.desktop.ui.IdeControls.*;
 import io.algora.desktop.debug.DebuggerPane;
 import io.algora.desktop.documents.DocumentManager;
 import io.algora.desktop.documents.EditorDocument;
-import io.algora.desktop.execution.ExecutionToolbar;
+import io.algora.desktop.execution.ExecutionController;
 import io.algora.desktop.terminal.TerminalPane;
-import io.algora.interpreter.AlgoraEngine;
-import io.algora.interpreter.DebugSession;
-import io.algora.interpreter.Snapshot;
 import java.io.IOException;
 import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
@@ -53,15 +48,9 @@ public final class AlgoraApplication extends Application {
   private final DebuggerPane debuggerPane = new DebuggerPane();
   private final Label position = new Label("Ln 1, Col 1");
   private final Label status = new Label("Pronto");
-  private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-  private DebugSession session;
-  private volatile boolean running;
-  private EditorDocument executionDocument;
   private Stage stage;
   private DocumentManager documentManager;
-  private final AtomicReference<Snapshot> latestSnapshot = new AtomicReference<>();
-  private final AtomicBoolean snapshotScheduled = new AtomicBoolean();
-  private ExecutionToolbar executionToolbar;
+  private ExecutionController execution;
   private VBox filesPanel, inspectionPanel;
   private Button filesToggle, inspectionToggle;
 
@@ -77,10 +66,11 @@ public final class AlgoraApplication extends Application {
             stage,
             status,
             position,
-            () -> running,
-            this::toggleBreakpoint,
-            () -> executionDocument,
+            () -> execution.isRunning(),
+            (d, line) -> execution.toggleBreakpoint(d, line),
+            () -> execution.executionDocument(),
             () -> debuggerPane.refreshBreakpoints(documentManager.active()));
+    execution = new ExecutionController(documentManager, terminalPane, debuggerPane, status);
     for (String file :
         List.of("IBMPlexSans-Regular.ttf", "IBMPlexSans-Medium.ttf", "IBMPlexMono-Regular.ttf")) {
       try (var stream = getClass().getResourceAsStream("fonts/" + file)) {
@@ -120,21 +110,21 @@ public final class AlgoraApplication extends Application {
         .put(
             new KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN),
             documentManager::newFile);
-    scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F5), () -> run(false));
+    scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F5), () -> execution.run(false));
     scene
         .getAccelerators()
         .put(
             new KeyCodeCombination(KeyCode.F9),
             () -> {
               EditorDocument d = documentManager.active();
-              if (d != null) toggleBreakpoint(d, d.editor.getCurrentParagraph() + 1);
+              if (d != null) execution.toggleBreakpoint(d, d.editor.getCurrentParagraph() + 1);
             });
     scene
         .getAccelerators()
         .put(
             new KeyCodeCombination(KeyCode.F10),
             () -> {
-              if (session != null) session.step();
+              execution.step();
             });
     stage.setScene(scene);
     applyTheme(EditorTheme.saved());
@@ -166,8 +156,7 @@ public final class AlgoraApplication extends Application {
               event.consume();
               return;
             }
-          if (session != null) session.stop();
-          executor.shutdownNow();
+          execution.stop();
         });
     documentManager.installSelectionListener();
     documentManager.addDocument("boas-vindas.alg", null, SAMPLE);
@@ -215,8 +204,9 @@ public final class AlgoraApplication extends Application {
           e -> {
             EditorDocument d = documentManager.active();
             if (d == null
-                || running && !command.equals("Copiar") && !command.equals("Selecionar tudo"))
-              return;
+                || execution.isRunning()
+                    && !command.equals("Copiar")
+                    && !command.equals("Selecionar tudo")) return;
             switch (command) {
               case "Desfazer" -> d.editor.undo();
               case "Refazer" -> d.editor.redo();
@@ -282,18 +272,7 @@ public final class AlgoraApplication extends Application {
     documentManager.tabs().setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
     documentManager.tabs().getStyleClass().add("editor-tabs");
     VBox.setVgrow(documentManager.tabs(), Priority.ALWAYS);
-    executionToolbar =
-        new ExecutionToolbar(
-            () -> run(false),
-            () -> run(true),
-            () -> {
-              if (session != null) session.pause();
-            },
-            () -> {
-              if (session != null) session.step();
-            },
-            this::stopExecution);
-    VBox top = new VBox(executionToolbar.view(), documentManager.tabs());
+    VBox top = new VBox(execution.toolbar().view(), documentManager.tabs());
     VBox.setVgrow(documentManager.tabs(), Priority.ALWAYS);
     SplitPane split = new SplitPane(top, terminalPane.view());
     split.setOrientation(Orientation.VERTICAL);
@@ -321,157 +300,6 @@ public final class AlgoraApplication extends Application {
             new Label("Portugol"));
     box.getStyleClass().add("statusbar");
     return box;
-  }
-
-  private void toggleBreakpoint(EditorDocument d, int line) {
-    if (!d.breakpoints.add(line)) d.breakpoints.remove(line);
-    if (session != null && executionDocument == d)
-      session.setBreakpoints(Set.copyOf(d.breakpoints));
-    debuggerPane.refreshGutter(d);
-    debuggerPane.refreshBreakpoints(documentManager.active());
-  }
-
-  private void run(boolean debugMode) {
-    if (running) {
-      if (session != null) session.resume();
-      return;
-    }
-    EditorDocument d = documentManager.active();
-    if (d == null) return;
-    executionDocument = d;
-    terminalPane.clearInputs();
-    terminalPane.output().clear();
-    debuggerPane.clearVariables();
-    setRunning(true);
-    terminalPane.append("Executando " + d.name() + "\n\n");
-    String source = d.editor.getText();
-    executor.submit(
-        () -> {
-          try {
-            session =
-                AlgoraEngine.createSession(
-                    source,
-                    () -> {
-                      Platform.runLater(
-                          () -> {
-                            terminalPane.statusLabel().setText("Aguardando entrada");
-                            terminalPane.input().setDisable(false);
-                            terminalPane.input().requestFocus();
-                          });
-                      return terminalPane.takeInput();
-                    },
-                    terminalPane::appendOutput,
-                    this::scheduleSnapshot);
-            session.setBreakpoints(Set.copyOf(d.breakpoints));
-            session
-                .start(debugMode)
-                .whenComplete(
-                    (result, exception) ->
-                        Platform.runLater(
-                            () -> {
-                              if (exception != null) {
-                                terminalPane.append(
-                                    "\nErro: " + rootCause(exception).getMessage() + "\n");
-                                status.setText("Erro na execução");
-                                terminalPane.statusLabel().setText("Erro");
-                              } else
-                                terminalPane.append(
-                                    "\n\n"
-                                        + (result.status().name().equals("STOPPED")
-                                            ? "Execução interrompida."
-                                            : "Execução finalizada.")
-                                        + "\n");
-                              if (exception == null) {
-                                String finalStatus =
-                                    result.status().name().equals("STOPPED")
-                                        ? "Interrompido"
-                                        : "Finalizado";
-                                terminalPane.statusLabel().setText(finalStatus);
-                                status.setText(finalStatus);
-                              }
-                              setRunning(false);
-                            }));
-          } catch (Throwable exception) {
-            Platform.runLater(
-                () -> {
-                  terminalPane.append("Erro: " + exception.getMessage() + "\n");
-                  status.setText("Erro no algoritmo");
-                  terminalPane.statusLabel().setText("Erro");
-                  setRunning(false);
-                });
-          }
-        });
-  }
-
-  private void scheduleSnapshot(Snapshot snapshot) {
-    latestSnapshot.set(snapshot);
-    if (snapshotScheduled.compareAndSet(false, true))
-      Platform.runLater(
-          () -> {
-            snapshotScheduled.set(false);
-            Snapshot latest = latestSnapshot.getAndSet(null);
-            if (latest != null) updateSnapshot(latest);
-          });
-  }
-
-  private Throwable rootCause(Throwable e) {
-    while (e.getCause() != null) e = e.getCause();
-    return e;
-  }
-
-  private void updateSnapshot(Snapshot snapshot) {
-    String state = snapshot.status().name();
-    boolean paused = state.equals("PAUSED");
-    terminalPane
-        .statusLabel()
-        .setText(
-            paused
-                ? "Pausado na linha " + snapshot.line()
-                : ""
-                    + switch (state) {
-                      case "RUNNING" -> "Em execução";
-                      case "COMPLETED" -> "Finalizado";
-                      case "ERROR" -> "Erro";
-                      case "STOPPED" -> "Interrompido";
-                      default -> "Pronto";
-                    });
-    status.setText(terminalPane.statusLabel().getText());
-    executionToolbar.setPaused(paused);
-    debuggerPane.updateVariables(snapshot.variables());
-    if (executionDocument != null) {
-      executionDocument.executionLine = paused ? snapshot.line() : 0;
-      debuggerPane.refreshGutter(executionDocument);
-      if (paused) {
-        int line =
-            Math.max(
-                0,
-                Math.min(snapshot.line() - 1, executionDocument.editor.getParagraphs().size() - 1));
-        executionDocument.editor.moveTo(line, 0);
-        executionDocument.editor.requestFollowCaret();
-      }
-    }
-  }
-
-  private void setRunning(boolean value) {
-    running = value;
-    if (value) {
-      terminalPane.statusLabel().setText("Em execução");
-      status.setText("Em execução");
-    }
-    for (EditorDocument d : documentManager.all()) d.editor.setEditable(!value);
-    executionToolbar.setRunning(value);
-    if (!value) {
-      terminalPane.input().setDisable(true);
-      if (executionDocument != null) {
-        executionDocument.executionLine = 0;
-        debuggerPane.refreshGutter(executionDocument);
-      }
-    }
-  }
-
-  private void stopExecution() {
-    if (session != null) session.stop();
-    terminalPane.input().setDisable(true);
   }
 
   /** Exercise the installed runtime without requiring an external JDK or test framework. */
@@ -518,7 +346,7 @@ public final class AlgoraApplication extends Application {
     pulse.setCycleCount(javafx.animation.Animation.INDEFINITE);
     deadline.play();
     pulse.play();
-    run(false);
+    execution.run(false);
   }
 
   private void showGuide() {
@@ -545,7 +373,6 @@ public final class AlgoraApplication extends Application {
 
   @Override
   public void stop() {
-    if (session != null) session.stop();
-    executor.shutdownNow();
+    if (execution != null) execution.stop();
   }
 }
