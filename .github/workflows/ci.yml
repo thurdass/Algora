@@ -54,11 +54,16 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          $failures = @()
           foreach ($installer in Get-ChildItem desktop/build/jpackage/installer/* | Where-Object Extension -in '.exe', '.msi') {
             powershell.exe -NoProfile -File ./desktop/packaging/tests/verify-windows-installer-ui.ps1 -InstallerPath $installer.FullName
-            if ($LASTEXITCODE -ne 0) { throw "Installer UI test failed: $($installer.Name)" }
+            if ($LASTEXITCODE -ne 0) {
+              $failures += "Installer UI test failed: $($installer.Name)"
+              continue
+            }
             ./desktop/packaging/tests/verify-windows-installer.ps1 -InstallerPath $installer.FullName
           }
+          if ($failures.Count) { throw ($failures -join '; ') }
       - uses: actions/upload-artifact@v4
         if: always() && runner.os == 'Windows'
         with:

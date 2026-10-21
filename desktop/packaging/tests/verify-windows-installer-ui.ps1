@@ -1,24 +1,60 @@
-# Run with Windows PowerShell for the built-in .NET Framework UI Automation assemblies.
+# Inspect native MSI dialogs, including windows not exposed through the UI Automation root.
 param([Parameter(Mandatory = $true)][string]$InstallerPath)
 $ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName UIAutomationClient
-Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+public class InstallerWindow {
+    public IntPtr Handle;
+    public string Name, Class;
+    public int ProcessId, Width, Height;
+    public bool Visible;
+}
+public static class InstallerNative {
+    private delegate bool Callback(IntPtr hwnd, IntPtr arg);
+    [StructLayout(LayoutKind.Sequential)] private struct Rect { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")] private static extern bool EnumWindows(Callback callback, IntPtr arg);
+    [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr parent, Callback callback, IntPtr arg);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetWindowText(IntPtr hwnd, StringBuilder text, int size);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetClassName(IntPtr hwnd, StringBuilder text, int size);
+    [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+    [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
+    private static InstallerWindow Read(IntPtr hwnd) {
+        var name = new StringBuilder(2048); var cls = new StringBuilder(256);
+        GetWindowText(hwnd, name, name.Capacity); GetClassName(hwnd, cls, cls.Capacity);
+        uint pid; GetWindowThreadProcessId(hwnd, out pid); Rect rect; GetWindowRect(hwnd, out rect);
+        return new InstallerWindow { Handle=hwnd, Name=name.ToString(), Class=cls.ToString(),
+            ProcessId=(int)pid, Visible=IsWindowVisible(hwnd), Width=rect.Right-rect.Left, Height=rect.Bottom-rect.Top };
+    }
+    public static InstallerWindow[] Windows() {
+        var windows = new List<InstallerWindow>();
+        EnumWindows((hwnd, arg) => { windows.Add(Read(hwnd)); return true; }, IntPtr.Zero);
+        return windows.ToArray();
+    }
+    public static InstallerWindow[] Children(IntPtr parent) {
+        var windows = new List<InstallerWindow>();
+        EnumChildWindows(parent, (hwnd, arg) => { windows.Add(Read(hwnd)); return true; }, IntPtr.Zero);
+        return windows.ToArray();
+    }
+    public static void Close(IntPtr hwnd) { PostMessage(hwnd, 0x0010, IntPtr.Zero, IntPtr.Zero); }
+    public static void Click(IntPtr hwnd) { PostMessage(hwnd, 0x00F5, IntPtr.Zero, IntPtr.Zero); }
+}
+'@
 $installer = Get-Item $InstallerPath
 $kind = $installer.Extension.TrimStart('.')
 $reports = Join-Path (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path 'build/reports/installer'
 New-Item -ItemType Directory -Force -Path $reports | Out-Null
 $log = Join-Path $reports "$kind-ui-install.log"
-$root = [System.Windows.Automation.AutomationElement]::RootElement
-$buttonCondition = New-Object System.Windows.Automation.PropertyCondition(
-    [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
-    [System.Windows.Automation.ControlType]::Button)
 function Get-InstallerWindows {
-    $windows = $root.FindAll([System.Windows.Automation.TreeScope]::Children,
-        [System.Windows.Automation.Condition]::TrueCondition)
-    foreach ($window in $windows) {
-        if ($window.Current.Name -like '*Algora*' -and !$window.Current.IsOffscreen) { $window }
+    foreach ($window in [InstallerNative]::Windows()) {
+        $owner = Get-Process -Id $window.ProcessId -ErrorAction SilentlyContinue
+        if ($owner.ProcessName -eq 'msiexec' -and $window.Visible) { $window }
     }
 }
 if ($kind -eq 'msi') {
@@ -26,51 +62,44 @@ if ($kind -eq 'msi') {
 } else {
     $process = Start-Process $installer.FullName -ArgumentList @('/L*v', "`"$log`"") -PassThru
 }
+$found = $false
 try {
     $deadline = [DateTime]::UtcNow.AddSeconds(45)
-    $found = $false
     while ([DateTime]::UtcNow -lt $deadline) {
         foreach ($window in @(Get-InstallerWindows)) {
-            $buttons = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $buttonCondition)
-            $names = @($buttons | ForEach-Object { $_.Current.Name })
-            if ($names -match 'Next|Install|Repair|Finish') {
-                $rectangle = $window.Current.BoundingRectangle
-                if ($rectangle.Width -gt 0 -and $rectangle.Height -gt 0) {
-                    "$($window.Current.Name): $($names -join ', ')" | Set-Content (Join-Path $reports "$kind-ui.txt")
-                    $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-                    $bitmap = New-Object System.Drawing.Bitmap($screen.Width, $screen.Height)
-                    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-                    try {
-                        $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
-                        $bitmap.Save((Join-Path $reports "$kind-ui.png"), [System.Drawing.Imaging.ImageFormat]::Png)
-                    } finally { $graphics.Dispose(); $bitmap.Dispose() }
-                    $found = $true
-                    break
-                }
+            $children = [InstallerNative]::Children($window.Handle)
+            $names = @($children | Where-Object { $_.Class -eq 'Button' -and $_.Visible } | ForEach-Object Name)
+            $labels = ($window.Name + ' ' + (($children | ForEach-Object Name) -join ' '))
+            if ($labels -match 'Algora' -and $names -match 'Next|Install|Repair|Finish' -and $window.Width -gt 0 -and $window.Height -gt 0) {
+                $labels | Set-Content (Join-Path $reports "$kind-ui.txt")
+                $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+                $bitmap = New-Object System.Drawing.Bitmap($screen.Width, $screen.Height)
+                $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+                try {
+                    $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+                    $bitmap.Save((Join-Path $reports "$kind-ui.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+                } finally { $graphics.Dispose(); $bitmap.Dispose() }
+                $found = $true
+                break
             }
         }
         if ($found) { break }
         if ($process.HasExited) { throw "Installer exited before showing its wizard: $($process.ExitCode)" }
         Start-Sleep -Milliseconds 300
     }
-    if (!$found) { throw "Installer did not show a visible wizard within 45 seconds ($kind)" }
+    if (!$found) {
+        [InstallerNative]::Windows() | ConvertTo-Json -Depth 3 | Set-Content (Join-Path $reports "$kind-windows.json")
+        throw "Installer did not show a visible wizard within 45 seconds ($kind)"
+    }
     Write-Output "ALGORA_WINDOWS_INSTALLER_UI_OK: $kind"
 } finally {
-    # Cancel the wizard without installing; the silent test exercises installation separately.
-    foreach ($window in @(Get-InstallerWindows)) {
-        $pattern = $null
-        if ($window.TryGetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern, [ref]$pattern)) {
-            $pattern.Close()
-        }
-    }
+    foreach ($window in @(Get-InstallerWindows)) { [InstallerNative]::Close($window.Handle) }
     $deadline = [DateTime]::UtcNow.AddSeconds(15)
     while (!$process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
         foreach ($window in @(Get-InstallerWindows)) {
-            $buttons = $window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $buttonCondition)
-            foreach ($button in $buttons) {
-                if ($button.Current.Name -match '^(&?Yes|&?Finish)$') {
-                    $invoke = $button.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-                    $invoke.Invoke()
+            foreach ($button in [InstallerNative]::Children($window.Handle)) {
+                if ($button.Class -eq 'Button' -and $button.Visible -and $button.Name -match '^(&?Yes|&?Finish)$') {
+                    [InstallerNative]::Click($button.Handle)
                 }
             }
         }
@@ -78,6 +107,6 @@ try {
     }
     if (!$process.HasExited) {
         taskkill.exe /PID $process.Id /T /F | Out-Null
-        throw "Installer wizard did not close after cancellation ($kind)"
+        if ($found) { throw "Installer wizard did not close after cancellation ($kind)" }
     }
 }
