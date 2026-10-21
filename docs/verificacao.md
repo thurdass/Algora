@@ -53,3 +53,11 @@ A release `v0.2.0` foi atualizada com os artefatos da revisão `9d0c9dd`, produz
 ### Ícones nativos do aplicativo
 
 A revisão `78168a8` configura o emblema oficial no `jpackage` e na janela JavaFX. O [workflow 39528828461](https://github.com/thurdass/Algora/actions/runs/39528828461) passou em Linux e Windows, incluindo build, 23 testes e execução empacotada. No Linux, o PNG da aplicação e o PNG extraído do `.deb` foram comparados ao recurso original e são idênticos; o arquivo `.desktop` aponta para esse ícone. O ICO Windows contém resoluções de 16 a 256 pixels. Os instaladores atualizados substituem os da release `v0.2.0` e recebem novos hashes SHA-256.
+
+### Associação da janela ao dock e instalação Windows
+
+A janela JavaFX foi inspecionada com `xprop`: `WM_CLASS` é `io.algora.desktop.AlgoraApplication` e `_NET_WM_ICON` já existia. O atalho do pacote anterior não declarava `StartupWMClass`. O template Linux agora inclui a classe correspondente. O teste `desktop/packaging/tests/verify-linux-desktop.py` extrai o `.deb`, abre seu executável e compara a classe nativa ao atalho, além de conferir a presença do ícone.
+
+O [workflow 39530990646](https://github.com/thurdass/Algora/actions/runs/39530990646), revisão `65d6bcc`, aprovou os testes das duas plataformas. No Windows, o novo teste `verify-windows-installer.ps1` instalou o `.exe` silenciosamente, consultou o estado pelo Windows Installer, verificou os atalhos, executou o aplicativo instalado e o desinstalou. Os marcadores são `ALGORA_WINDOWS_INSTALL_OK` e `ALGORA_WINDOWS_UNINSTALL_OK`. A primeira versão desse teste falhou por presumir um caminho de Registro específico; os logs já indicavam instalação bem-sucedida, e a consulta foi corrigida para usar a API MSI.
+
+A falha Windows relatada pelo usuário não foi reproduzida nesse ambiente; sua mensagem e etapa ainda são necessárias para diagnóstico específico. O teste silencioso não cobre os diálogos interativos, SmartScreen ou políticas de outra máquina. Os instaladores e hashes da release `v0.2.0` foram atualizados para esta revisão.
