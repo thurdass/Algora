@@ -1,6 +1,8 @@
 package io.algora.desktop.terminal;
 
-import io.algora.desktop.Icons;
+import static io.algora.desktop.ui.IdeControls.iconButton;
+
+import io.algora.desktop.ui.Icons;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.application.Platform;
@@ -47,23 +49,12 @@ public final class TerminalPane {
     label.getStyleClass().add("terminal-label");
     Region flex = new Region();
     HBox.setHgrow(flex, Priority.ALWAYS);
-    Button clear = clearButton();
+    Button clear = iconButton("close", "Limpar terminal", () -> terminal.clear());
     HBox terminalHead = new HBox(10, label, flex, runStatus, clear);
     terminalHead.getStyleClass().add("terminal-heading");
     view = new VBox(terminalHead, terminal, input);
     view.setMinHeight(150);
     view.getStyleClass().add("terminal-panel");
-  }
-
-  private Button clearButton() {
-    Button b = new Button("");
-    b.setTooltip(new Tooltip("Limpar terminal"));
-    b.setOnAction(e -> terminal.clear());
-    b.setFocusTraversable(true);
-    b.setAccessibleText("Limpar terminal");
-    b.setGraphic(Icons.create("close"));
-    b.getStyleClass().add("icon-button");
-    return b;
   }
 
   public VBox view() {

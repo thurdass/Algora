@@ -1,4 +1,4 @@
-package io.algora.desktop;
+package io.algora.desktop.ui;
 
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.SVGPath;

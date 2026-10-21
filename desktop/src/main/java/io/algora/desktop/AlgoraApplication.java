@@ -1,7 +1,10 @@
 package io.algora.desktop;
 
+import static io.algora.desktop.ui.IdeControls.*;
+
 import io.algora.desktop.editor.PortugolEditorSupport;
 import io.algora.desktop.terminal.TerminalPane;
+import io.algora.desktop.ui.Icons;
 import io.algora.interpreter.AlgoraEngine;
 import io.algora.interpreter.DebugSession;
 import io.algora.interpreter.Snapshot;
@@ -518,28 +521,6 @@ public final class AlgoraApplication extends Application {
             new Label("Portugol"));
     box.getStyleClass().add("statusbar");
     return box;
-  }
-
-  private Label heading(String text) {
-    Label l = new Label(text);
-    l.getStyleClass().add("heading");
-    return l;
-  }
-
-  private Button button(String text, String tooltip, Runnable action) {
-    Button b = new Button(text);
-    b.setTooltip(new Tooltip(tooltip));
-    b.setOnAction(e -> action.run());
-    b.setFocusTraversable(true);
-    b.setAccessibleText(tooltip);
-    return b;
-  }
-
-  private Button iconButton(String icon, String tooltip, Runnable action) {
-    Button b = button("", tooltip, action);
-    b.setGraphic(Icons.create(icon));
-    b.getStyleClass().add("icon-button");
-    return b;
   }
 
   private Document active() {
