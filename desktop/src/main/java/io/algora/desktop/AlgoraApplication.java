@@ -1,7 +1,5 @@
 package io.algora.desktop;
 
-import static io.algora.desktop.ui.components.IdeControls.*;
-
 import io.algora.desktop.debug.DebuggerPane;
 import io.algora.desktop.documents.DocumentManager;
 import io.algora.desktop.documents.EditorDocument;
@@ -10,13 +8,11 @@ import io.algora.desktop.terminal.TerminalPane;
 import io.algora.desktop.ui.ApplicationHeader;
 import io.algora.desktop.ui.StatusBar;
 import io.algora.desktop.ui.WorkspaceLayout;
+import io.algora.desktop.verification.PackagedApplicationProbe;
 import java.io.IOException;
-import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.*;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -165,7 +161,8 @@ public final class AlgoraApplication extends Application {
     stage.show();
     List<String> args = getParameters() == null ? List.of() : getParameters().getRaw();
     for (String arg : args) if (arg.endsWith(".alg")) documentManager.load(Path.of(arg));
-    if (args.contains("--smoke-test")) smokeTest();
+    if (args.contains("--smoke-test"))
+      PackagedApplicationProbe.verify(terminalPane, this::stop, () -> execution.run(false));
   }
 
   void applyTheme(EditorTheme theme) {
@@ -184,53 +181,6 @@ public final class AlgoraApplication extends Application {
       themes.getItems().add(item);
     }
     return themes;
-  }
-
-  /** Exercise the installed runtime without requiring an external JDK or test framework. */
-  private void smokeTest() {
-    javafx.animation.Timeline pulse = new javafx.animation.Timeline();
-    javafx.animation.PauseTransition deadline =
-        new javafx.animation.PauseTransition(javafx.util.Duration.seconds(15));
-    deadline.setOnFinished(
-        event -> {
-          System.err.println("ALGORA_SMOKE_FAILED: timeout");
-          stop();
-          Platform.exit();
-          System.exit(1);
-        });
-    pulse
-        .getKeyFrames()
-        .add(
-            new javafx.animation.KeyFrame(
-                javafx.util.Duration.millis(80),
-                event -> {
-                  if (!terminalPane.input().isDisabled()) {
-                    terminalPane.input().setText("Java 21");
-                    terminalPane.input().fireEvent(new javafx.event.ActionEvent());
-                  }
-                  if (terminalPane.output().getText().contains("Erro:")) {
-                    System.err.println("ALGORA_SMOKE_FAILED: " + terminalPane.output().getText());
-                    stop();
-                    Platform.exit();
-                    System.exit(1);
-                  }
-                  if (terminalPane.output().getText().contains("Execução finalizada")) {
-                    if (!terminalPane.output().getText().contains("Bem-vindo ao Algora, Java 21!")
-                        || !terminalPane.output().getText().contains("Passo 3")) {
-                      System.err.println("ALGORA_SMOKE_FAILED: unexpected output");
-                      System.exit(1);
-                    }
-                    pulse.stop();
-                    deadline.stop();
-                    System.out.println("ALGORA_SMOKE_OK");
-                    stop();
-                    Platform.exit();
-                  }
-                }));
-    pulse.setCycleCount(javafx.animation.Animation.INDEFINITE);
-    deadline.play();
-    pulse.play();
-    execution.run(false);
   }
 
   @Override
