@@ -5,8 +5,8 @@ import static io.algora.desktop.ui.IdeControls.*;
 import io.algora.desktop.debug.DebuggerPane;
 import io.algora.desktop.documents.DocumentManager;
 import io.algora.desktop.documents.EditorDocument;
+import io.algora.desktop.execution.ExecutionToolbar;
 import io.algora.desktop.terminal.TerminalPane;
-import io.algora.desktop.ui.Icons;
 import io.algora.interpreter.AlgoraEngine;
 import io.algora.interpreter.DebugSession;
 import io.algora.interpreter.Snapshot;
@@ -61,7 +61,7 @@ public final class AlgoraApplication extends Application {
   private DocumentManager documentManager;
   private final AtomicReference<Snapshot> latestSnapshot = new AtomicReference<>();
   private final AtomicBoolean snapshotScheduled = new AtomicBoolean();
-  private Button execute, debug, pause, step, stop;
+  private ExecutionToolbar executionToolbar;
   private VBox filesPanel, inspectionPanel;
   private Button filesToggle, inspectionToggle;
 
@@ -282,40 +282,18 @@ public final class AlgoraApplication extends Application {
     documentManager.tabs().setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
     documentManager.tabs().getStyleClass().add("editor-tabs");
     VBox.setVgrow(documentManager.tabs(), Priority.ALWAYS);
-    execute = button("Executar   F5", "Executar ou continuar", () -> run(false));
-    execute.setGraphic(Icons.create("play"));
-    execute.getStyleClass().add("run-button");
-    execute.setId("runButton");
-    debug = button("Depurar", "Depurar desde a primeira instrução", () -> run(true));
-    debug.setGraphic(Icons.create("debug"));
-    pause =
-        iconButton(
-            "pause",
-            "Pausar",
+    executionToolbar =
+        new ExecutionToolbar(
+            () -> run(false),
+            () -> run(true),
             () -> {
               if (session != null) session.pause();
-            });
-    step =
-        iconButton(
-            "step",
-            "Próximo passo (F10)",
+            },
             () -> {
               if (session != null) session.step();
-            });
-    stop = iconButton("stop", "Parar execução", this::stopExecution);
-    debug.setId("debugButton");
-    step.setId("stepButton");
-    stop.setId("stopButton");
-    pause.setDisable(true);
-    step.setDisable(true);
-    stop.setDisable(true);
-    Label breadcrumb = new Label("Portugol");
-    breadcrumb.getStyleClass().add("subtle");
-    Region space = new Region();
-    HBox.setHgrow(space, Priority.ALWAYS);
-    HBox toolbar = new HBox(9, breadcrumb, space, execute, debug, pause, step, stop);
-    toolbar.getStyleClass().add("editor-toolbar");
-    VBox top = new VBox(toolbar, documentManager.tabs());
+            },
+            this::stopExecution);
+    VBox top = new VBox(executionToolbar.view(), documentManager.tabs());
     VBox.setVgrow(documentManager.tabs(), Priority.ALWAYS);
     SplitPane split = new SplitPane(top, terminalPane.view());
     split.setOrientation(Orientation.VERTICAL);
@@ -458,7 +436,7 @@ public final class AlgoraApplication extends Application {
                       default -> "Pronto";
                     });
     status.setText(terminalPane.statusLabel().getText());
-    execute.setText(paused ? "Continuar   F5" : "Executar   F5");
+    executionToolbar.setPaused(paused);
     debuggerPane.updateVariables(snapshot.variables());
     if (executionDocument != null) {
       executionDocument.executionLine = paused ? snapshot.line() : 0;
@@ -481,10 +459,7 @@ public final class AlgoraApplication extends Application {
       status.setText("Em execução");
     }
     for (EditorDocument d : documentManager.all()) d.editor.setEditable(!value);
-    debug.setDisable(value);
-    pause.setDisable(!value);
-    step.setDisable(!value);
-    stop.setDisable(!value);
+    executionToolbar.setRunning(value);
     if (!value) {
       terminalPane.input().setDisable(true);
       if (executionDocument != null) {
