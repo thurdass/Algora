@@ -43,6 +43,21 @@ jobs:
         if: runner.os == 'Linux'
       - run: .\gradlew.bat :desktop:jpackageSmokeTest --no-daemon
         if: runner.os == 'Windows'
+      - name: Verify Linux window and desktop launcher identity
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y x11-utils
+          xvfb-run -a python3 desktop/packaging/tests/verify-linux-desktop.py
+      - name: Install, launch and uninstall Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./desktop/packaging/tests/verify-windows-installer.ps1
+      - uses: actions/upload-artifact@v4
+        if: always() && runner.os == 'Windows'
+        with:
+          name: Windows-installer-diagnostics
+          path: desktop/build/reports/installer/
       - uses: actions/upload-artifact@v4
         with:
           name: Algora-Java21-${{ runner.os }}

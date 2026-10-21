@@ -44,3 +44,17 @@ O build, os testes JavaFX e a execução da aplicação nativa com runtime inclu
 Os builds usam o emblema da logo oficial: PNG no Linux e ICO com múltiplas resoluções no Windows. O `jpackage` recebe o ícone tanto na aplicação quanto no instalador; a janela JavaFX também carrega o PNG. Os recursos ficam em `desktop/src/main/resources/io/algora/desktop/icons/`.
 
 Se você instalou um pacote anterior com o ícone padrão do Java, baixe o instalador atualizado da release e reinstale o aplicativo. Atalhos antigos criados manualmente podem precisar ser recriados; o ambiente desktop também pode manter o ícone antigo em cache até uma nova sessão.
+
+### Ícone no dock Linux
+
+O atalho distribuído no `.deb` declara `StartupWMClass=io.algora.desktop.AlgoraApplication`, correspondente à classe nativa da janela JavaFX. Isso permite associar a janela aberta ao ícone do menu, conforme a [especificação Desktop Entry](https://specifications.freedesktop.org/desktop-entry/latest/recognized-keys.html). Após atualizar, feche o aplicativo e abra-o pelo menu. Se ele estiver fixado no dock por um atalho antigo, remova essa fixação e fixe o aplicativo atualizado novamente.
+
+### Diagnóstico do instalador Windows
+
+O CI instala o `.exe` silenciosamente, verifica o registro por usuário e os atalhos, executa a aplicação instalada e a desinstala. Os logs MSI ficam no artefato `Windows-installer-diagnostics` do workflow. Esse teste não substitui a validação dos diálogos interativos nem identifica problemas específicos de uma máquina sem a mensagem de erro correspondente.
+
+Para gerar um log local de instalação pelo PowerShell, no diretório do download:
+
+```powershell
+.\Algora-0.2.0.exe /L*v "$env:TEMP\algora-install.log"
+```

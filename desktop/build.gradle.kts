@@ -52,7 +52,7 @@ tasks.register<Exec>("jpackageInstaller") {
             "--dest", output.absolutePath, "--name", "Algora", "--app-version", project.version.toString(),
             "--vendor", "Algora", "--icon", applicationIcon.asFile.absolutePath, "--app-image", appImageDirectory.get().dir("Algora").asFile.absolutePath)
         if(hostOs.isWindows) args += listOf("--win-menu", "--win-shortcut", "--win-dir-chooser", "--win-per-user-install")
-        if(hostOs.isLinux) args += listOf("--linux-menu-group", "Development", "--linux-shortcut", "--linux-package-name", "algora", "--linux-deb-maintainer", "thurdass@users.noreply.github.com")
+        if(hostOs.isLinux) args += listOf("--resource-dir", layout.projectDirectory.dir("packaging/linux").asFile.absolutePath, "--linux-menu-group", "Development", "--linux-shortcut", "--linux-package-name", "algora", "--linux-deb-maintainer", "thurdass@users.noreply.github.com")
         commandLine(args)
     }
 }
