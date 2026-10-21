@@ -11,7 +11,13 @@
   <img src="docs/assets/algora-logo.png" alt="Logo do Algora" width="320">
 </p>
 
-IDE para escrever, executar e depurar algoritmos em Portugol, com interpretador próprio para arquivos `.alg` do dialeto VisualG. O projeto usa **Java 21, JavaFX 21, ANTLR4 e RichTextFX**, com **Gradle Kotlin DSL**, testes **JUnit 5** e distribuição nativa via **jpackage**.
+**Algora** é uma IDE moderna para escrever, executar e depurar algoritmos em Portugol, desenvolvida para **Linux e Windows**, com interpretador próprio para arquivos `.alg` do dialeto VisualG.
+
+Idealizado e desenvolvido por **Arthur Almeida**, o Algora é um projeto pessoal criado para oferecer uma IDE moderna e acessível a estudantes de lógica de programação. Seu objetivo é unir simplicidade, aprendizado e uma experiência de desenvolvimento que acompanhe os primeiros passos na programação.
+
+**Atualmente em fase beta (v0.2.0)**, o projeto continua recebendo melhorias, correções e novas funcionalidades.
+
+O projeto usa **Java 21, JavaFX 21, ANTLR4 e RichTextFX**, com **Gradle Kotlin DSL**, testes **JUnit 5** e distribuição nativa via **jpackage**.
 
 A interface reúne editor com abas e realce de sintaxe, entrada e saída do algoritmo, autocompletar e depurador com pontos de parada e inspeção de variáveis. O núcleo da linguagem permanece independente da interface gráfica. Para informações sobre os recursos do dialeto VisualG atendidos pelo Algora, consulte a [matriz de compatibilidade](docs/compatibilidade.md) e o [levantamento Java](interpreter/compatibility-survey.md).
 
