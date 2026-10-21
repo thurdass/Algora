@@ -8,6 +8,7 @@ import io.algora.desktop.documents.EditorDocument;
 import io.algora.desktop.execution.ExecutionController;
 import io.algora.desktop.terminal.TerminalPane;
 import io.algora.desktop.ui.ApplicationHeader;
+import io.algora.desktop.ui.StatusBar;
 import io.algora.desktop.ui.WorkspaceLayout;
 import java.io.IOException;
 import java.nio.charset.*;
@@ -44,8 +45,7 @@ public final class AlgoraApplication extends Application {
           + "fimalgoritmo\n";
   private final TerminalPane terminalPane = new TerminalPane();
   private final DebuggerPane debuggerPane = new DebuggerPane();
-  private final Label position = new Label("Ln 1, Col 1");
-  private final Label status = new Label("Pronto");
+  private final StatusBar statusBar = new StatusBar();
   private Stage stage;
   private DocumentManager documentManager;
   private ExecutionController execution;
@@ -61,13 +61,14 @@ public final class AlgoraApplication extends Application {
     documentManager =
         new DocumentManager(
             stage,
-            status,
-            position,
+            statusBar.status(),
+            statusBar.position(),
             () -> execution.isRunning(),
             (d, line) -> execution.toggleBreakpoint(d, line),
             () -> execution.executionDocument(),
             () -> debuggerPane.refreshBreakpoints(documentManager.active()));
-    execution = new ExecutionController(documentManager, terminalPane, debuggerPane, status);
+    execution =
+        new ExecutionController(documentManager, terminalPane, debuggerPane, statusBar.status());
     for (String file :
         List.of("IBMPlexSans-Regular.ttf", "IBMPlexSans-Medium.ttf", "IBMPlexMono-Regular.ttf")) {
       try (var stream = getClass().getResourceAsStream("fonts/" + file)) {
@@ -99,7 +100,7 @@ public final class AlgoraApplication extends Application {
             header.filesToggle(),
             header.inspectionToggle());
     root.setCenter(workspace.view());
-    root.setBottom(statusbar());
+    root.setBottom(statusBar.view());
     Scene scene = new Scene(root, 1360, 860);
     scene
         .getStylesheets()
@@ -183,22 +184,6 @@ public final class AlgoraApplication extends Application {
       themes.getItems().add(item);
     }
     return themes;
-  }
-
-  private HBox statusbar() {
-    Region space = new Region();
-    HBox.setHgrow(space, Priority.ALWAYS);
-    HBox box =
-        new HBox(
-            24,
-            status,
-            new Label("Algora 0.2"),
-            space,
-            position,
-            new Label("UTF-8"),
-            new Label("Portugol"));
-    box.getStyleClass().add("statusbar");
-    return box;
   }
 
   /** Exercise the installed runtime without requiring an external JDK or test framework. */
