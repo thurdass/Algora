@@ -1,18 +1,25 @@
 # Algora
 
+![Status: Beta](https://img.shields.io/badge/status-Beta-orange)
+![Versão: v0.2.0](https://img.shields.io/badge/vers%C3%A3o-v0.2.0-blue)
+![Java 21](https://img.shields.io/badge/Java-21-007396)
+![Plataformas: Linux e Windows](https://img.shields.io/badge/plataformas-Linux%20%7C%20Windows-555555)
+
+> **Beta v0.2.0:** o Algora está em desenvolvimento ativo e pode apresentar bugs ou comportamentos inesperados. Esta versão já oferece edição, execução e depuração de algoritmos em uma interface moderna.
+
 <p align="center">
   <img src="docs/assets/algora-logo.png" alt="Logo do Algora" width="320">
 </p>
 
 IDE para escrever, executar e depurar algoritmos em Portugol, com interpretador próprio para arquivos `.alg` do dialeto VisualG. O projeto usa **Java 21, JavaFX 21, ANTLR4 e RichTextFX**, com **Gradle Kotlin DSL**, testes **JUnit 5** e distribuição nativa via **jpackage**.
 
-A interface reúne editor com abas e realce de sintaxe, entrada e saída do algoritmo, autocompletar e depurador com pontos de parada e inspeção de variáveis. O núcleo da linguagem permanece independente da interface gráfica. A compatibilidade é parcial: o [levantamento Java](interpreter/compatibility-survey.md) aceitou 58 de 73 arquivos do conjunto local pelo parser, sem afirmar equivalência integral de execução. Consulte a [matriz de compatibilidade](docs/compatibilidade.md) antes de importar programas existentes.
+A interface reúne editor com abas e realce de sintaxe, entrada e saída do algoritmo, autocompletar e depurador com pontos de parada e inspeção de variáveis. O núcleo da linguagem permanece independente da interface gráfica. Para informações sobre os recursos do dialeto VisualG atendidos pelo Algora, consulte a [matriz de compatibilidade](docs/compatibilidade.md) e o [levantamento Java](interpreter/compatibility-survey.md).
 
 ![IDE JavaFX do Algora](docs/assets/algora.png)
 
 A interface utiliza fontes IBM Plex locais, painéis recolhíveis e composição adaptada a janelas compactas. Os 23 testes e a execução dos aplicativos empacotados passaram em Linux e Windows. Veja a [direção visual](docs/design-interface.md), a [visualização compacta](docs/assets/algora-compacto.png) e o [registro de verificação](docs/verificacao.md).
 
-## Download e instalação
+## Download — Beta v0.2.0
 
 Baixe os instaladores na [release v0.2.0](https://github.com/thurdass/Algora/releases/tag/v0.2.0):
 
