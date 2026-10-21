@@ -41,3 +41,5 @@ Os painéis laterais podem ser recolhidos. Em janelas compactas, a inspeção e 
 ## Verificação visual
 
 A revisão usa capturas reais do JavaFX em tamanho normal e compacto, além dos testes de entrada, execução, depuração e autocompletar. Os testes de composição verificam recolhimento dos painéis e tamanho útil do editor.
+
+A revisão das capturas corrigiu o corte do texto de orientação e o acompanhamento da saída do terminal. O estado final da execução permanece visível. Capturas: [normal](assets/algora.png), [compacta](assets/algora-compacto.png) e [após execução](assets/algora-execucao.png).

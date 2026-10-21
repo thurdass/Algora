@@ -83,10 +83,13 @@ class AlgoraApplicationTest {
     var image = stage.getScene().snapshot(null);
     int width = (int) image.getWidth(), height = (int) image.getHeight();
     int[] pixels = new int[width * height];
-    image.getPixelReader().getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+    image
+        .getPixelReader()
+        .getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
     BufferedImage png = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     png.setRGB(0, 0, width, height, pixels, 0, width);
-    Path directory = Path.of("build/screenshots"); Files.createDirectories(directory);
+    Path directory = Path.of("build/screenshots");
+    Files.createDirectories(directory);
     ImageIO.write(png, "png", directory.resolve(name).toFile());
   }
 
@@ -119,7 +122,12 @@ class AlgoraApplicationTest {
     await(() -> node("terminalOutput", TextArea.class).getText().contains("Execução finalizada"));
     assertTrue(output().contains("Bem-vindo ao Algora, Ada!"));
     assertTrue(output().contains("Passo 3"));
-    fx(() -> { capture("Algora-execucao.png"); return null; });
+    assertEquals("Finalizado", fx(() -> node("executionStatus", Label.class).getText()));
+    fx(
+        () -> {
+          capture("Algora-execucao.png");
+          return null;
+        });
   }
 
   @Test
@@ -212,23 +220,42 @@ class AlgoraApplicationTest {
           return null;
         });
   }
+
   @Test
   void compactLayoutKeepsEditorUsableAndPanelsCanBeReopened() throws Exception {
-    fx(() -> { stage.setWidth(820); stage.setHeight(620); return null; });
-    await(() -> !node("filesPanel", javafx.scene.layout.VBox.class).isManaged()
-        && !node("inspectionPanel", javafx.scene.layout.VBox.class).isManaged()
-        && node("editorPane", javafx.scene.layout.VBox.class).getWidth() > 700);
-    fx(() -> { capture("Algora-compacto.png"); node("filesToggle", Button.class).fire(); return null; });
+    fx(
+        () -> {
+          stage.setWidth(820);
+          stage.setHeight(620);
+          return null;
+        });
+    await(
+        () ->
+            !node("filesPanel", javafx.scene.layout.VBox.class).isManaged()
+                && !node("inspectionPanel", javafx.scene.layout.VBox.class).isManaged()
+                && node("editorPane", javafx.scene.layout.VBox.class).getWidth() > 700);
+    fx(
+        () -> {
+          capture("Algora-compacto.png");
+          node("filesToggle", Button.class).fire();
+          return null;
+        });
     await(() -> node("filesPanel", javafx.scene.layout.VBox.class).isManaged());
-    fx(() -> { node("inspectionToggle", Button.class).fire(); return null; });
-    await(() -> node("inspectionPanel", javafx.scene.layout.VBox.class).isManaged()
-        && !node("filesPanel", javafx.scene.layout.VBox.class).isManaged()
-        && node("editorPane", javafx.scene.layout.VBox.class).getWidth() > 480);
-    fx(() -> {
-      assertTrue(node("runButton", Button.class).isVisible());
-      assertEquals("IBM Plex Sans", stage.getScene().getRoot().getCssMetaData().isEmpty() ? "" : javafx.scene.text.Font.getFamilies().stream().filter("IBM Plex Sans"::equals).findFirst().orElse(""));
-      return null;
-    });
+    fx(
+        () -> {
+          node("inspectionToggle", Button.class).fire();
+          return null;
+        });
+    await(
+        () ->
+            node("inspectionPanel", javafx.scene.layout.VBox.class).isManaged()
+                && !node("filesPanel", javafx.scene.layout.VBox.class).isManaged()
+                && node("editorPane", javafx.scene.layout.VBox.class).getWidth() > 480);
+    fx(
+        () -> {
+          assertTrue(node("runButton", Button.class).isVisible());
+          assertTrue(javafx.scene.text.Font.getFamilies().contains("IBM Plex Sans"));
+          return null;
+        });
   }
-
 }

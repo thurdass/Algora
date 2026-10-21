@@ -6,7 +6,7 @@ A interface reúne editor com abas e realce de sintaxe, entrada e saída do algo
 
 ![IDE JavaFX do Algora](docs/assets/algora.png)
 
-Build, 21 testes JUnit 5 e execução do aplicativo empacotado foram aprovados em Linux e Windows. Veja o [registro de verificação](docs/verificacao.md) e os artefatos da CI.
+A interface utiliza fontes IBM Plex locais, painéis recolhíveis e composição adaptada a janelas compactas. Veja a [direção visual](docs/design-interface.md), a [visualização compacta](docs/assets/algora-compacto.png) e o [registro de verificação](docs/verificacao.md).
 
 ## Executar
 
@@ -26,6 +26,8 @@ No Windows, substitua `./gradlew` por `.\gradlew.bat`. Os exemplos originais em 
 | --- | --- |
 | `Ctrl+N`, `Ctrl+O`, `Ctrl+S` | Novo arquivo, abrir e salvar |
 | `Ctrl+Espaço` | Sugestões de palavras e modelos de estruturas |
+| `Ctrl+B` | Mostrar ou ocultar arquivos |
+| `Ctrl+Shift+D` | Mostrar ou ocultar depuração |
 | `F5` | Executar ou continuar |
 | `F9` | Alternar ponto de parada na linha atual |
 | `F10` | Avançar uma instrução |

@@ -16,12 +16,12 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
-import javafx.scene.text.Font;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.fxmisc.flowless.VirtualizedScrollPane;
@@ -48,9 +48,9 @@ public final class AlgoraApplication extends Application {
           + "fimalgoritmo\n";
   private static final String[] KEYWORDS =
       ("algoritmo var inicio fimalgoritmo inteiro real caractere caracter logico verdadeiro falso"
-           + " se entao senao fimse para de ate passo faca fimpara enquanto fimenquanto repita"
-           + " escolha caso outrocaso fimescolha procedimento fimprocedimento funcao fimfuncao"
-           + " retorne leia escreva escreval e ou nao div mod interrompa")
+              + " se entao senao fimse para de ate passo faca fimpara enquanto fimenquanto repita"
+              + " escolha caso outrocaso fimescolha procedimento fimprocedimento funcao fimfuncao"
+              + " retorne leia escreva escreval e ou nao div mod interrompa")
           .split(" ");
   private static final Pattern TOKENS =
       Pattern.compile(
@@ -193,10 +193,14 @@ public final class AlgoraApplication extends Application {
   @Override
   public void start(Stage stage) {
     this.stage = stage;
-    for (String file : List.of("IBMPlexSans-Regular.ttf", "IBMPlexSans-Medium.ttf", "IBMPlexMono-Regular.ttf")) {
+    for (String file :
+        List.of("IBMPlexSans-Regular.ttf", "IBMPlexSans-Medium.ttf", "IBMPlexMono-Regular.ttf")) {
       try (var stream = getClass().getResourceAsStream("fonts/" + file)) {
-        if (stream == null || Font.loadFont(stream, 13) == null) throw new IOException("Fonte ausente: " + file);
-      } catch (IOException e) { throw new IllegalStateException("Não foi possível carregar a tipografia", e); }
+        if (stream == null || Font.loadFont(stream, 13) == null)
+          throw new IOException("Fonte ausente: " + file);
+      } catch (IOException e) {
+        throw new IllegalStateException("Não foi possível carregar a tipografia", e);
+      }
     }
     BorderPane root = new BorderPane();
     root.getStyleClass().add("root-shell");
@@ -244,12 +248,24 @@ public final class AlgoraApplication extends Application {
     stage.setTitle("Algora — seu próximo algoritmo");
     stage.setMinWidth(760);
     stage.setMinHeight(560);
-    stage.widthProperty().addListener((o, old, width) -> {
-      showPanel(filesPanel, filesToggle, width.doubleValue() >= 900);
-      showPanel(inspectionPanel, inspectionToggle, width.doubleValue() >= 1160);
-    });
-    scene.getAccelerators().put(new KeyCodeCombination(KeyCode.B, KeyCombination.CONTROL_DOWN), () -> togglePanel(filesPanel));
-    scene.getAccelerators().put(new KeyCodeCombination(KeyCode.D, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN), () -> togglePanel(inspectionPanel));
+    stage
+        .widthProperty()
+        .addListener(
+            (o, old, width) -> {
+              showPanel(filesPanel, filesToggle, width.doubleValue() >= 900);
+              showPanel(inspectionPanel, inspectionToggle, width.doubleValue() >= 1160);
+            });
+    scene
+        .getAccelerators()
+        .put(
+            new KeyCodeCombination(KeyCode.B, KeyCombination.CONTROL_DOWN),
+            () -> togglePanel(filesPanel));
+    scene
+        .getAccelerators()
+        .put(
+            new KeyCodeCombination(
+                KeyCode.D, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN),
+            () -> togglePanel(inspectionPanel));
     stage.setOnCloseRequest(
         event -> {
           for (Document d : new ArrayList<>(documents.values()))
@@ -284,8 +300,10 @@ public final class AlgoraApplication extends Application {
   }
 
   private HBox header() {
-    Label logo = new Label("{ }"); logo.getStyleClass().add("brand-icon");
-    Label brand = new Label("algora"); brand.getStyleClass().add("brand");
+    Label logo = new Label("{ }");
+    logo.getStyleClass().add("brand-icon");
+    Label brand = new Label("algora");
+    brand.getStyleClass().add("brand");
     Menu file = new Menu("Arquivo");
     MenuItem fresh = new MenuItem("Novo algoritmo    Ctrl+N");
     fresh.setOnAction(e -> newFile());
@@ -326,45 +344,68 @@ public final class AlgoraApplication extends Application {
     showInspector.setOnAction(e -> togglePanel(inspectionPanel));
     view.getItems().addAll(showFiles, showInspector);
     MenuBar menu = new MenuBar(file, edit, view, help);
-    Region space = new Region(); HBox.setHgrow(space, Priority.ALWAYS);
-    filesToggle = iconButton("sidebar", "Mostrar ou ocultar arquivos (Ctrl+B)", () -> togglePanel(filesPanel));
+    Region space = new Region();
+    HBox.setHgrow(space, Priority.ALWAYS);
+    filesToggle =
+        iconButton(
+            "sidebar", "Mostrar ou ocultar arquivos (Ctrl+B)", () -> togglePanel(filesPanel));
     filesToggle.setId("filesToggle");
-    inspectionToggle = iconButton("inspector", "Mostrar ou ocultar depuração (Ctrl+Shift+D)", () -> togglePanel(inspectionPanel));
+    inspectionToggle =
+        iconButton(
+            "inspector",
+            "Mostrar ou ocultar depuração (Ctrl+Shift+D)",
+            () -> togglePanel(inspectionPanel));
     inspectionToggle.setId("inspectionToggle");
     HBox box = new HBox(9, logo, brand, menu, space, filesToggle, inspectionToggle);
-    box.getStyleClass().add("header"); return box;
+    box.getStyleClass().add("header");
+    return box;
   }
 
   private VBox sidebar() {
     Label title = heading("Arquivos");
     Button plus = iconButton("plus", "Novo algoritmo (Ctrl+N)", this::newFile);
     Button open = iconButton("files", "Abrir arquivo (Ctrl+O)", this::open);
-    Region space = new Region(); HBox.setHgrow(space, Priority.ALWAYS);
-    HBox top = new HBox(5, title, space, open, plus); top.getStyleClass().add("panel-heading");
-    Label project = new Label("Algoritmos"); project.setGraphic(Icons.create("files")); project.setGraphicTextGap(8);
+    Region space = new Region();
+    HBox.setHgrow(space, Priority.ALWAYS);
+    HBox top = new HBox(5, title, space, open, plus);
+    top.getStyleClass().add("panel-heading");
+    Label project = new Label("Algoritmos");
+    project.setGraphic(Icons.create("files"));
+    project.setGraphicTextGap(8);
     project.getStyleClass().add("project-heading");
     explorer.getStyleClass().add("explorer");
-    explorer.setCellFactory(list -> new ListCell<>() {
-      @Override protected void updateItem(Document document, boolean empty) {
-        super.updateItem(document, empty);
-        setText(empty || document == null ? null : document.toString());
-        setGraphic(empty || document == null ? null : Icons.create("file")); setGraphicTextGap(9);
-      }
-    });
-    explorer.setOnMouseClicked(e -> {
-      Document d = explorer.getSelectionModel().getSelectedItem();
-      if (d != null && !running) tabs.getSelectionModel().select(d.tab);
-    });
+    explorer.setCellFactory(
+        list ->
+            new ListCell<>() {
+              @Override
+              protected void updateItem(Document document, boolean empty) {
+                super.updateItem(document, empty);
+                setText(empty || document == null ? null : document.toString());
+                setGraphic(empty || document == null ? null : Icons.create("file"));
+                setGraphicTextGap(9);
+              }
+            });
+    explorer.setOnMouseClicked(
+        e -> {
+          Document d = explorer.getSelectionModel().getSelectedItem();
+          if (d != null && !running) tabs.getSelectionModel().select(d.tab);
+        });
     VBox.setVgrow(explorer, Priority.ALWAYS);
     Button fresh = button("Novo arquivo", "Novo algoritmo (Ctrl+N)", this::newFile);
-    fresh.setGraphic(Icons.create("plus")); fresh.getStyleClass().add("new-file");
+    fresh.setGraphic(Icons.create("plus"));
+    fresh.getStyleClass().add("new-file");
     VBox box = new VBox(top, project, explorer, fresh);
-    box.setId("filesPanel"); box.getStyleClass().add("sidebar"); box.setPrefWidth(220); box.setMinWidth(190); box.setMaxWidth(220);
+    box.setId("filesPanel");
+    box.getStyleClass().add("sidebar");
+    box.setPrefWidth(220);
+    box.setMinWidth(190);
+    box.setMaxWidth(220);
     return box;
   }
 
   private void showPanel(VBox panel, Button toggle, boolean visible) {
-    panel.setVisible(visible); panel.setManaged(visible);
+    panel.setVisible(visible);
+    panel.setManaged(visible);
     toggle.pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("selected"), visible);
   }
 
@@ -416,6 +457,7 @@ public final class AlgoraApplication extends Application {
     toolbar.getStyleClass().add("editor-toolbar");
     VBox top = new VBox(toolbar, tabs);
     VBox.setVgrow(tabs, Priority.ALWAYS);
+    runStatus.setId("executionStatus");
     terminal.setId("terminalOutput");
     terminal.setEditable(false);
     terminal.setWrapText(true);
@@ -432,7 +474,7 @@ public final class AlgoraApplication extends Application {
         e -> {
           if (!input.isDisabled()) {
             String text = input.getText();
-            terminal.appendText(text + "\n");
+            appendTerminal(text + "\n");
             input.clear();
             input.setDisable(true);
             inputs.offer(text);
@@ -463,14 +505,25 @@ public final class AlgoraApplication extends Application {
   }
 
   private VBox inspector() {
-    VBox box = new VBox(); box.setId("inspectionPanel"); box.getStyleClass().add("inspector");
-    box.setPrefWidth(240); box.setMinWidth(215); box.setMaxWidth(240);
-    Label title = heading("Depuração"); HBox top = new HBox(title); top.getStyleClass().add("panel-heading");
-    Label vars = heading("Variáveis"); vars.getStyleClass().add("section-heading");
-    variables.setId("variablesTable"); variables.getStyleClass().add("variables"); emptyVariables();
-    Label points = heading("Pontos de parada"); points.getStyleClass().add("section-heading");
+    VBox box = new VBox();
+    box.setId("inspectionPanel");
+    box.getStyleClass().add("inspector");
+    box.setPrefWidth(240);
+    box.setMinWidth(215);
+    box.setMaxWidth(240);
+    Label title = heading("Depuração");
+    HBox top = new HBox(title);
+    top.getStyleClass().add("panel-heading");
+    Label vars = heading("Variáveis");
+    vars.getStyleClass().add("section-heading");
+    variables.setId("variablesTable");
+    variables.getStyleClass().add("variables");
+    emptyVariables();
+    Label points = heading("Pontos de parada");
+    points.getStyleClass().add("section-heading");
     breakpointList.getStyleClass().add("breakpoints");
-    box.getChildren().addAll(top, vars, variables, points, breakpointList); return box;
+    box.getChildren().addAll(top, vars, variables, points, breakpointList);
+    return box;
   }
 
   private HBox statusbar() {
@@ -505,7 +558,10 @@ public final class AlgoraApplication extends Application {
   }
 
   private Button iconButton(String icon, String tooltip, Runnable action) {
-    Button b = button("", tooltip, action); b.setGraphic(Icons.create(icon)); b.getStyleClass().add("icon-button"); return b;
+    Button b = button("", tooltip, action);
+    b.setGraphic(Icons.create(icon));
+    b.getStyleClass().add("icon-button");
+    return b;
   }
 
   private Document active() {
@@ -687,7 +743,8 @@ public final class AlgoraApplication extends Application {
     breakpointList.getChildren().clear();
     Document d = active();
     if (d == null || d.breakpoints.isEmpty()) {
-      Label hint = new Label("Nenhum ponto de parada.\nClique na margem do editor ou use F9.");
+      Label hint = new Label("Nenhum ponto de parada.\nUse a margem do editor ou F9.");
+      hint.setWrapText(true);
       hint.getStyleClass().add("hint");
       breakpointList.getChildren().add(hint);
       return;
@@ -708,7 +765,8 @@ public final class AlgoraApplication extends Application {
 
   private void emptyVariables() {
     Label empty = new Label("Execute ou depure para\ninspecionar as variáveis.");
-    empty.getStyleClass().add("empty-state"); variables.getChildren().setAll(empty);
+    empty.getStyleClass().add("empty-state");
+    variables.getChildren().setAll(empty);
   }
 
   private void run(boolean debugMode) {
@@ -723,7 +781,7 @@ public final class AlgoraApplication extends Application {
     terminal.clear();
     variables.getChildren().clear();
     setRunning(true);
-    terminal.appendText("Executando " + d.name() + "\n\n");
+    appendTerminal("Executando " + d.name() + "\n\n");
     String source = d.editor.getText();
     executor.submit(
         () -> {
@@ -750,27 +808,43 @@ public final class AlgoraApplication extends Application {
                         Platform.runLater(
                             () -> {
                               if (exception != null) {
-                                terminal.appendText(
+                                appendTerminal(
                                     "\nErro: " + rootCause(exception).getMessage() + "\n");
                                 status.setText("Erro na execução");
+                                runStatus.setText("Erro");
                               } else
-                                terminal.appendText(
+                                appendTerminal(
                                     "\n\n"
                                         + (result.status().name().equals("STOPPED")
                                             ? "Execução interrompida."
                                             : "Execução finalizada.")
                                         + "\n");
+                              if (exception == null) {
+                                String finalStatus =
+                                    result.status().name().equals("STOPPED")
+                                        ? "Interrompido"
+                                        : "Finalizado";
+                                runStatus.setText(finalStatus);
+                                status.setText(finalStatus);
+                              }
                               setRunning(false);
                             }));
           } catch (Throwable exception) {
             Platform.runLater(
                 () -> {
-                  terminal.appendText("Erro: " + exception.getMessage() + "\n");
+                  appendTerminal("Erro: " + exception.getMessage() + "\n");
                   status.setText("Erro no algoritmo");
+                  runStatus.setText("Erro");
                   setRunning(false);
                 });
           }
         });
+  }
+
+  private void appendTerminal(String text) {
+    terminal.appendText(text);
+    terminal.positionCaret(terminal.getLength());
+    terminal.setScrollTop(Double.MAX_VALUE);
   }
 
   private void appendOutput(String text) {
@@ -790,7 +864,7 @@ public final class AlgoraApplication extends Application {
               terminal.clear();
               pending = pending.substring(pending.lastIndexOf("\u001b[2J") + 4);
             }
-            terminal.appendText(pending.replaceAll("\\x1b\\[[0-9;]*[A-Za-z]", ""));
+            appendTerminal(pending.replaceAll("\\x1b\\[[0-9;]*[A-Za-z]", ""));
           });
   }
 
@@ -824,6 +898,7 @@ public final class AlgoraApplication extends Application {
                   case "STOPPED" -> "Interrompido";
                   default -> "Pronto";
                 });
+    status.setText(runStatus.getText());
     execute.setText(paused ? "Continuar   F5" : "Executar   F5");
     variables.getChildren().clear();
     snapshot
@@ -864,6 +939,10 @@ public final class AlgoraApplication extends Application {
 
   private void setRunning(boolean value) {
     running = value;
+    if (value) {
+      runStatus.setText("Em execução");
+      status.setText("Em execução");
+    }
     for (Document d : documents.values()) d.editor.setEditable(!value);
     debug.setDisable(value);
     pause.setDisable(!value);
@@ -871,7 +950,6 @@ public final class AlgoraApplication extends Application {
     stop.setDisable(!value);
     if (!value) {
       input.setDisable(true);
-      runStatus.setText("Pronto");
       if (executionDocument != null) {
         executionDocument.executionLine = 0;
         refreshGutter(executionDocument);
@@ -941,7 +1019,9 @@ public final class AlgoraApplication extends Application {
                 + "Ctrl+Espaço  Autocompletar e modelos\n"
                 + "Ctrl+O  Abrir arquivo .alg\n"
                 + "Ctrl+S  Salvar em UTF-8\n"
-                + "Ctrl+N  Novo algoritmo\n" + "Ctrl+B  Mostrar ou ocultar arquivos\n" + "Ctrl+Shift+D  Mostrar ou ocultar depuração\n\n"
+                + "Ctrl+N  Novo algoritmo\n"
+                + "Ctrl+B  Mostrar ou ocultar arquivos\n"
+                + "Ctrl+Shift+D  Mostrar ou ocultar depuração\n\n"
                 + "Clique na margem esquerda para adicionar pontos de parada.\n"
                 + "O terminal aceita os valores solicitados por leia().\n"
                 + "Arquivos legados Windows-1252 são reconhecidos na abertura.",
