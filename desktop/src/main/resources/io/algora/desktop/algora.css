@@ -53,7 +53,6 @@
     -fx-border-width: 0 0 1 0;
 }
 .brand { -fx-font-family: "IBM Plex Sans Medm"; -fx-font-size: 15px; -fx-text-fill: -alg-text; }
-.brand-icon { -fx-font-family: "IBM Plex Mono"; -fx-font-size: 16px; -fx-text-fill: -alg-accent; -fx-padding: 0 1; }
 .menu-bar { -fx-background-color: transparent; -fx-padding: 0 14; }
 .menu { -fx-padding: 6 10; }
 .menu .label { -fx-text-fill: -alg-muted; -fx-font-size: 13px; }

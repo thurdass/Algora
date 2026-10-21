@@ -15,8 +15,11 @@ import java.util.regex.Pattern;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -308,8 +311,19 @@ public final class AlgoraApplication extends Application {
   }
 
   private HBox header() {
-    Label logo = new Label("{ }");
-    logo.getStyleClass().add("brand-icon");
+    ImageView logo =
+        new ImageView(
+            new Image(
+                Objects.requireNonNull(getClass().getResource("algora-logo.png"))
+                    .toExternalForm()));
+    // Use the emblem from the supplied full lockup; the adjacent label supplies the name.
+    logo.setViewport(new Rectangle2D(245, 210, 780, 620));
+    logo.setFitWidth(28);
+    logo.setFitHeight(24);
+    logo.setPreserveRatio(true);
+    logo.setSmooth(true);
+    logo.setId("projectLogo");
+    logo.setAccessibleText("Logo do Algora");
     Label brand = new Label("algora");
     brand.getStyleClass().add("brand");
     Menu file = new Menu("Arquivo");

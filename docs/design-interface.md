@@ -25,3 +25,5 @@ Alinhamento à esquerda e divisórias discretas delimitam funções. A revisão 
 Em **Exibir → Tema de cores**, selecione Grafite, Dracula, Nord, Solarizado escuro, Claro ou Solarizado claro. A mudança é imediata e a escolha é salva pelas preferências locais do Java, por usuário. Editor, sintaxe, seleção, linha atual, terminal, menus e depurador compartilham os tokens semânticos de cada paleta. Não há download de temas nem fontes.
 
 As janelas compactas recolhem painéis; Ctrl+B alterna arquivos e Ctrl+Shift+D alterna depuração. Os testes gráficos exercitam os seis temas, persistência da seleção, execução, entrada, autocompletar, pontos de parada e layout compacto. As capturas em `desktop/build/screenshots` permitem revisar cada paleta.
+
+O cabeçalho utiliza o emblema da logo oficial fornecida pelo usuário, ao lado do nome Algora. A imagem é distribuída como recurso local; o enquadramento exibe somente o símbolo para manter a leitura em 28 pixels e evitar repetir o nome contido na versão completa.
