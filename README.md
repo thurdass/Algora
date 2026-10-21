@@ -1,5 +1,9 @@
 # Algora
 
+<p align="center">
+  <img src="docs/assets/algora-logo.png" alt="Logo do Algora" width="320">
+</p>
+
 IDE para escrever, executar e depurar algoritmos em Portugol, com interpretador próprio para arquivos `.alg` do dialeto VisualG. O projeto usa **Java 21, JavaFX 21, ANTLR4 e RichTextFX**, com **Gradle Kotlin DSL**, testes **JUnit 5** e distribuição nativa via **jpackage**.
 
 A interface reúne editor com abas e realce de sintaxe, entrada e saída do algoritmo, autocompletar e depurador com pontos de parada e inspeção de variáveis. O núcleo da linguagem permanece independente da interface gráfica. A compatibilidade é parcial: o [levantamento Java](interpreter/compatibility-survey.md) aceitou 58 de 73 arquivos do conjunto local pelo parser, sem afirmar equivalência integral de execução. Consulte a [matriz de compatibilidade](docs/compatibilidade.md) antes de importar programas existentes.
@@ -8,7 +12,16 @@ A interface reúne editor com abas e realce de sintaxe, entrada e saída do algo
 
 A interface utiliza fontes IBM Plex locais, painéis recolhíveis e composição adaptada a janelas compactas. Os 23 testes e a execução dos aplicativos empacotados passaram em Linux e Windows. Veja a [direção visual](docs/design-interface.md), a [visualização compacta](docs/assets/algora-compacto.png) e o [registro de verificação](docs/verificacao.md).
 
-## Executar
+## Download e instalação
+
+Baixe os instaladores na [release v0.2.0](https://github.com/thurdass/Algora/releases/tag/v0.2.0):
+
+- **Windows x64:** execute `Algora-0.2.0.exe` e siga o instalador.
+- **Linux x64 (Debian/Ubuntu):** baixe `algora_0.2.0_amd64.deb` e execute `sudo apt install ./algora_0.2.0_amd64.deb`.
+
+Os instaladores incluem o runtime Java; não é necessário instalar um JDK para usar a IDE. O arquivo `SHA256SUMS.txt` permite conferir a integridade dos downloads. O pacote Linux é destinado a distribuições compatíveis com `.deb`.
+
+## Executar a partir do código
 
 Instale um JDK 21 completo. O Gradle Wrapper baixa as dependências na primeira execução.
 

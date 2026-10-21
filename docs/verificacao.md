@@ -42,3 +42,5 @@ O [levantamento Java](../interpreter/compatibility-survey.md) aceitou 58 de 73 a
 ## Atualização: temas e referências de IDE
 
 Em 20/10/2026, a suíte passou com 23 testes (14 interpretador, 3 CLI, 6 interface). Os seis temas são exercitados com aplicação de CSS, persistência e capturas. O build Linux, instalador `.deb` e execução do aplicativo empacotado passaram (`ALGORA_SMOKE_OK`). A validação Windows desta alteração será registrada pelo workflow do commit correspondente; a validação Windows citada acima pertence à revisão anterior.
+
+O workflow [39521317453](https://github.com/thurdass/Algora/actions/runs/39521317453) confirmou a revisão `b21f652` em Linux e Windows: 23 testes e teste de execução nativa aprovados. Seus instaladores são a origem dos artefatos da release `v0.2.0`; a alteração seguinte adiciona somente logo e documentação. A release acompanha hashes SHA-256.
