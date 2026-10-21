@@ -1,8 +1,8 @@
 package io.algora.desktop.execution;
 
-import static io.algora.desktop.ui.IdeControls.*;
+import static io.algora.desktop.ui.components.IdeControls.*;
 
-import io.algora.desktop.ui.Icons;
+import io.algora.desktop.ui.components.Icons;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 

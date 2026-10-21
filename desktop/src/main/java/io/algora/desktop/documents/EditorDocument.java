@@ -1,7 +1,7 @@
 package io.algora.desktop.documents;
 
 import io.algora.desktop.editor.PortugolEditorSupport;
-import io.algora.desktop.ui.Icons;
+import io.algora.desktop.ui.components.Icons;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.*;

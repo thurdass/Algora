@@ -1,8 +1,8 @@
 package io.algora.desktop.terminal;
 
-import static io.algora.desktop.ui.IdeControls.iconButton;
+import static io.algora.desktop.ui.components.IdeControls.iconButton;
 
-import io.algora.desktop.ui.Icons;
+import io.algora.desktop.ui.components.Icons;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.application.Platform;

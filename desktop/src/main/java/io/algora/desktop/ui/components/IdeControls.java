@@ -1,4 +1,4 @@
-package io.algora.desktop.ui;
+package io.algora.desktop.ui.components;
 
 import javafx.scene.control.*;
 

@@ -1,6 +1,6 @@
 package io.algora.desktop.debug;
 
-import static io.algora.desktop.ui.IdeControls.*;
+import static io.algora.desktop.ui.components.IdeControls.*;
 
 import io.algora.desktop.documents.EditorDocument;
 import java.util.*;
