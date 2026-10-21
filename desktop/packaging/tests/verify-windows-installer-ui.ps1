@@ -11,7 +11,7 @@ using System.Text;
 public class InstallerWindow {
     public IntPtr Handle;
     public string Name, Class;
-    public int ProcessId, Width, Height;
+    public int ProcessId, Left, Top, Width, Height;
     public bool Visible;
 }
 public static class InstallerNative {
@@ -24,13 +24,14 @@ public static class InstallerNative {
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
     private static InstallerWindow Read(IntPtr hwnd) {
         var name = new StringBuilder(2048); var cls = new StringBuilder(256);
         GetWindowText(hwnd, name, name.Capacity); GetClassName(hwnd, cls, cls.Capacity);
         uint pid; GetWindowThreadProcessId(hwnd, out pid); Rect rect; GetWindowRect(hwnd, out rect);
         return new InstallerWindow { Handle=hwnd, Name=name.ToString(), Class=cls.ToString(),
-            ProcessId=(int)pid, Visible=IsWindowVisible(hwnd), Width=rect.Right-rect.Left, Height=rect.Bottom-rect.Top };
+            ProcessId=(int)pid, Visible=IsWindowVisible(hwnd), Left=rect.Left, Top=rect.Top, Width=rect.Right-rect.Left, Height=rect.Bottom-rect.Top };
     }
     public static InstallerWindow[] Windows() {
         var windows = new List<InstallerWindow>();
@@ -72,11 +73,12 @@ try {
             $labels = ($window.Name + ' ' + (($children | ForEach-Object Name) -join ' '))
             if ($labels -match 'Algora' -and $names -match 'Next|Install|Repair|Finish' -and $window.Width -gt 0 -and $window.Height -gt 0) {
                 $labels | Set-Content (Join-Path $reports "$kind-ui.txt")
-                $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-                $bitmap = New-Object System.Drawing.Bitmap($screen.Width, $screen.Height)
+                $size = New-Object System.Drawing.Size($window.Width, $window.Height)
+                $origin = New-Object System.Drawing.Point($window.Left, $window.Top)
+                $bitmap = New-Object System.Drawing.Bitmap($window.Width, $window.Height)
                 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
                 try {
-                    $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+                    $graphics.CopyFromScreen($origin, [System.Drawing.Point]::Empty, $size)
                     $bitmap.Save((Join-Path $reports "$kind-ui.png"), [System.Drawing.Imaging.ImageFormat]::Png)
                 } finally { $graphics.Dispose(); $bitmap.Dispose() }
                 $found = $true
@@ -93,7 +95,14 @@ try {
     }
     Write-Output "ALGORA_WINDOWS_INSTALLER_UI_OK: $kind"
 } finally {
-    foreach ($window in @(Get-InstallerWindows)) { [InstallerNative]::Close($window.Handle) }
+    foreach ($window in @(Get-InstallerWindows)) {
+        [InstallerNative]::SetForegroundWindow($window.Handle) | Out-Null
+        $cancel = [InstallerNative]::Children($window.Handle) |
+            Where-Object { $_.Class -eq 'Button' -and $_.Visible -and $_.Name -match '^&?Cancel$' } |
+            Select-Object -First 1
+        if ($cancel) { [InstallerNative]::Click($cancel.Handle) }
+        else { [InstallerNative]::Close($window.Handle) }
+    }
     $deadline = [DateTime]::UtcNow.AddSeconds(15)
     while (!$process.HasExited -and [DateTime]::UtcNow -lt $deadline) {
         foreach ($window in @(Get-InstallerWindows)) {
@@ -106,6 +115,9 @@ try {
         Start-Sleep -Milliseconds 300
     }
     if (!$process.HasExited) {
+        [InstallerNative]::Windows() | ForEach-Object {
+            [pscustomobject]@{ Window = $_; Children = [InstallerNative]::Children($_.Handle) }
+        } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $reports "$kind-cancel-windows.json")
         taskkill.exe /PID $process.Id /T /F | Out-Null
         if ($found) { throw "Installer wizard did not close after cancellation ($kind)" }
     }
